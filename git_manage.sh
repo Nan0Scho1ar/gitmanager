@@ -20,7 +20,8 @@ if [ -t 1 ] && command -v tput > /dev/null; then
 fi
 
 repos=""
-auto=false
+repo_auto=false
+branch_auto=false
 
 
 if [ -z $XDG_CONFIG_HOME ]; then
@@ -132,7 +133,7 @@ ask_if_push() {
 
 #Checks if a repo should be skipped
 check_should_skip_repo() {
-    [[ "$auto" == true ]] || ask "Update project $(colour_path)" || return 1
+    [[ "$repo_auto" == true ]] || ask "Update project $(colour_path)" || return 1
     git_fetch "$path/.."
     ask_if_skip_dirty && return 0 || echo; return 1
 }
@@ -295,6 +296,19 @@ clean_branches() {
     done
 }
 
+#pull all branches
+pull() {
+    for path in $repos; do
+        check_should_skip_repo || continue
+        git_get_branches
+        for branch in $branches; do
+            git_checkout $branch
+            [[ "$branch_auto" == true ]] || ask "pull" || continue
+            git_pull
+        done
+    done
+}
+
 #push pull all branches
 push_pull() {
     for path in $repos; do
@@ -302,10 +316,10 @@ push_pull() {
         git_get_branches
         for branch in $branches; do
             git_checkout $branch
-            [[ "$auto" == true ]] || ask "pull+push" || continue
-	    git_pull
+            [[ "$branch_auto" == true ]] || ask "pull+push" || continue
+            git_pull
             ask_if_skip_dirty_merge || continue
-	    git_push
+            git_push
         done
     done
 }
@@ -322,7 +336,7 @@ list_branches() {
 #Bring everything up to date
 everything() {
     for path in $repos; do
-        [[ "$auto" == true ]] || ask "Update project $(colour_path)" || continue
+        [[ "$repo_auto" == true ]] || ask "Update project $(colour_path)" || continue
         git_fetch "$path/.."
 	git_get_branches
         for branch in $branches; do
@@ -330,13 +344,13 @@ everything() {
 	    ret="$?"
             #If out of sync then pull push
 	    if [[ "$ret" == 1 ]]; then
-                [[ "$auto" == true ]] || ask "pull+push" || continue
+                [[ "$branch_auto" == true ]] || ask "pull+push" || continue
 	        git_pull
                 ask_if_skip_dirty_merge || continue
 	        git_push
             #If conflicts detected ask to skip (auto skip if auto enabled)
             elif [[ "$ret" == 2 ]]; then
-                [[ "$auto" == true ]] && continue
+                [[ "$branch_auto" == true ]] && continue
                 ask_if_skip_dirty_merge || continue
 	        git_push
             #If changes detected, commit them
@@ -364,7 +378,7 @@ show_help() {
     echo -e "Used to manage multiple branches across multiple git repositories\n"
 
     echo    "  -F          Search for git repos"
-    echo -e "              Searches C: drive for git repos"
+    echo -e "              Searches home directory for git repos"
     echo -e "              (This must completed at least once to update the cache used by other functions)\n"
 
     echo    "  -f          Fetch repos"
@@ -376,11 +390,23 @@ show_help() {
     echo    "  -S          List changes"
     echo -e "              List all changes in each repository which have not been comitted\n"
 
-    echo    "  -p          Pull and push"
+    echo    "  -p          Pull"
+    echo -e "              Prompts you to pull each branch in your git repositories\n"
+
+    echo    "  -ap         Auto pull"
+    echo -e "              Prompts you to pull each branch in your git repositories without asking confirmation for each branch\n"
+
+    echo    "  -Aap         Full auto pull"
+    echo -e "              Pull each branch in your git repositories without asking confirmation for each branch\n"
+
+    echo    "  -P          Pull and push"
     echo -e "              Prompts you to pull+push each branch in your git repositories\n"
 
-    echo    "  -P          Pull and push auto"
-    echo -e "              Prompts you to pull+push each branch in your git repositories without asking confirmation for each branch\n"
+    echo    "  -aP         Auto pull and push "
+    echo -e "              Prompts you to pull+push each of in your git repositories without asking confirmation for each branch\n"
+
+    echo    "  -AaP         Full auto pull and push "
+    echo -e "              pull+push each branch in your git repositories without asking confirmation for each branch\n"
 
     echo    "  -c          Add all changes + commit + push"
     echo -e "              Prompts you to add all changes + commit + push each git repository\n"
@@ -421,7 +447,7 @@ show_help() {
 
 
 #Process args
-while getopts ":f::F::s::S::p::P::c::C::m::M::r::b::B::e::E::h:" opt; do
+while getopts ":f::F::s::S::p::P::ap::aP::Ap::AP::Aap::AaP::c::C::m::M::r::b::B::e::E::h:" opt; do
     case $opt in
         b)
             set_repos
@@ -465,14 +491,20 @@ while getopts ":f::F::s::S::p::P::c::C::m::M::r::b::B::e::E::h:" opt; do
             exit
         ;;
         :) #arg missing param
-            if [[ $OPTARG == "F" ]]; then find_repos "/c"
+            if [[ $OPTARG == "F" ]]; then find_repos "$HOME"
             else
                 set_repos
                 if   [[ $OPTARG == "f" ]]; then git_fetch_all_repos
                 elif [[ $OPTARG == "s" ]]; then repos_summary
                 elif [[ $OPTARG == "S" ]]; then repos_status
-                elif [[ $OPTARG == "p" ]]; then push_pull
-                elif [[ $OPTARG == "P" ]]; then auto=true; push_pull
+                elif [[ $OPTARG == "p" ]]; then pull
+                elif [[ $OPTARG == "ap" ]]; then branch_auto=true; pull
+                elif [[ $OPTARG == "Ap" ]]; then repo_auto=true; pull
+                elif [[ $OPTARG == "Aap" ]]; then repo_auto=true; branch_auto=true; pull
+                elif [[ $OPTARG == "P" ]]; then push_pull
+                elif [[ $OPTARG == "aP" ]]; then branch_auto=true; push_pull
+                elif [[ $OPTARG == "AP" ]]; then repo_auto=true; push_pull
+                elif [[ $OPTARG == "AaP" ]]; then repo_auto=true; branch_auto=true; push_pull
                 elif [[ $OPTARG == "c" ]]; then commit_and_push
                 elif [[ $OPTARG == "C" ]]; then commit_and_push "NODIFF"
                 elif [[ $OPTARG == "m" ]]; then echo "TODO deted merge conflicts"
@@ -481,7 +513,7 @@ while getopts ":f::F::s::S::p::P::c::C::m::M::r::b::B::e::E::h:" opt; do
                 elif [[ $OPTARG == "b" ]]; then list_branches
                 elif [[ $OPTARG == "B" ]]; then echo "TODO"
                 elif [[ $OPTARG == "e" ]]; then everything
-		elif [[ $OPTARG == "E" ]]; then auto=true; everything
+                elif [[ $OPTARG == "E" ]]; then repo_auto=true; branch_auto=true; everything
                 elif [[ $OPTARG == "h" ]]; then show_help
                 fi
             fi
@@ -511,7 +543,7 @@ while true; do
         push_pull
     elif [[ $opt == "Pull and push auto" ]]; then
         echo -e "\n${yellow}Prompts you to pull+push each branch in you git repositories\n${reset}"
-	auto=true
+        branch_auto=true
         push_pull
     elif [[ $opt == "Add all changes + commit + push" ]]; then
         echo -e "\n${yellow}Prompts you to Add all changes + commit + push each of you git repositories\n${reset}"
