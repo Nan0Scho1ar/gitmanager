@@ -22,8 +22,13 @@ fi
 repos=""
 auto=false
 
-#Current working direcroty
-cwd="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+if [ -z $XDG_CONFIG_HOME ]; then
+    cfg_path="$HOME/.config/gitmanager"
+else
+    cfg_path="$XDG_CONFIG_HOME/gitmanager"
+fi
+mkdir -p "$cfg_path"
 
 #Displays the option menu (if no args provided to program)
 show_menu() {
@@ -34,10 +39,10 @@ show_menu() {
 }
 
 ##Sets repos variable using cache files
-set_repos() { repos=$(cat ${cwd}/repos.cache | grep -v -f ${cwd}/repos.exclude); }
+set_repos() { repos=$(cat ${cfg_path}/repos.cache | grep -v -f ${cfg_path}/repos.exclude); }
 
 ##Sets repos and prints them to the user
-using_repos() { set_repos && echo "Using repos:${cyan}$(cat ${cwd}/repos.cache | grep -vf ${cwd}/repos.exclude)${reset}"; }
+using_repos() { set_repos && echo "Using repos:${cyan}$(cat ${cfg_path}/repos.cache | grep -vf ${cfg_path}/repos.exclude)${reset}"; }
 
 #pwd but coloured
 colour_pwd() { echo ${cyan}$(pwd)${reset}; }
@@ -77,7 +82,7 @@ git_fetch_all_repos() { for path in $repos; do git_fetch "$path/.."; done }
 
 #Calls git status with ability to use cached value
 git_status() {
-#    if [[ "$1" == "CACHED" ]]; then 
+#    if [[ "$1" == "CACHED" ]]; then
 #	echo $status
 #	return
 #    fi
@@ -98,8 +103,8 @@ has_conflicts() { git_status $1 | grep -Eq "both added|both modified" && return 
 
 #Provides a one line summary on the current repo/branch
 git_summary() {
-    tree_is_clean && branch_up_to_date "CACHED" && echo "$(colour_pwd): ${green}No changes found${reset}" && return 0 
-    tree_is_clean "CACHED" && echo "$(colour_pwd): ${yellow}Out of sync${reset}" && return 1 
+    tree_is_clean && branch_up_to_date "CACHED" && echo "$(colour_pwd): ${green}No changes found${reset}" && return 0
+    tree_is_clean "CACHED" && echo "$(colour_pwd): ${yellow}Out of sync${reset}" && return 1
     has_conflicts "CACHED" && echo "$(colour_pwd): ${red}Merge conflict detected${reset}" && return 2
     echo "$(colour_pwd): ${red}Changes detected${reset}" && return 3
 }
@@ -111,7 +116,7 @@ git_get_branches() {
     echo -e "\nFound branches:\n$(echo ${blue}${branches}${reset} | tr " " "\n")\n"
 }
 
-#Promts the user to answer a yes/no question. 
+#Promts the user to answer a yes/no question.
 #Returns after a single char is entered without hitting return.
 ask() {
     read -p "${1} ${yellow}y/n${reset} " -n 1 -r
@@ -122,7 +127,7 @@ ask() {
 #Asks the user if they want to push then pushes and shows status.
 ask_if_push() {
     git_checkout $branch | grep -q "but the upstream is gone." && echo -e "Remote has been deleted. Pushing will recreate it.\n"
-    ask "push" && git_push && git_status && echo 
+    ask "push" && git_push && git_status && echo
 }
 
 #Checks if a repo should be skipped
@@ -145,12 +150,12 @@ ask_if_skip_dirty_merge() {
     tree_is_clean && return 0
     git_status
     echo    "${red}Auto merge failed, conflicts found${reset}."
-    echo    "Would you like to skip remaining branches in this project or revert the merge?" 
+    echo    "Would you like to skip remaining branches in this project or revert the merge?"
     read -p "(y to skip, n to recheck, r to revert merge and continue) ${yellow}y/n/r${reset} " -n 1 -r
     echo -e "\n\n"
     [[ $REPLY =~ ^[Yy]$ ]] && return 1
     [[ $REPLY =~ ^[Rr]$ ]] && git_merge_abort
-    ask_if_skip_dirty_merge 
+    ask_if_skip_dirty_merge
 }
 
 #Checks how far ahead/behind a branch is
@@ -171,28 +176,28 @@ get_ahead_behind() {
 #Finds repos on the system
 find_repos() {
     cd $1
-    find ~+ -name .git -type d -prune 2> /dev/null  | grep -v -f ${cwd}/repos.cache >> ${cwd}/repos.cache
+    find ~+ -name .git -type d -prune 2> /dev/null  | grep -v -f ${cfg_path}/repos.cache >> ${cfg_path}/repos.cache
     echo -e "Updated repos.cache\n"
-    
-    if [[ ! -e ${cwd}/repos.cache ]]; then
+
+    if [[ ! -e ${cfg_path}/repos.cache ]]; then
         echo "Cannot find repos.cache. Exiting..."
         read -p "Press enter to continue"
         exit 1
     fi
     echo "Found the following repos (in repos.cache)"
-    cat ${cwd}/repos.cache
+    cat ${cfg_path}/repos.cache
     echo
-    if [[ ! -e ${cwd}/repos.exclude ]]; then
+    if [[ ! -e ${cfg_path}/repos.exclude ]]; then
         echo "Cannot find repos.exclude"
-        touch ${cwd}/repos.exclude
+        touch ${cfg_path}/repos.exclude
         echo -e "Created repos.exclude\nCopy the path of any unwanted repos in the above output to a new line of this file.\n"
         read -p "Press enter to continue once you have completed this step"
     fi
     echo "Excluding the following repos (in repos.exclude)"
-    cat ${cwd}/repos.exclude
+    cat ${cfg_path}/repos.exclude
     echo -e "\nFinal list"
-    cat ${cwd}/repos.cache | grep -vf ${cwd}/repos.exclude
-    repos=$(cat ${cwd}/repos.cache | grep -v -f ${cwd}/repos.exclude)
+    cat ${cfg_path}/repos.cache | grep -vf ${cfg_path}/repos.exclude
+    repos=$(cat ${cfg_path}/repos.cache | grep -v -f ${cfg_path}/repos.exclude)
 }
 
 #Displays a brief summary of all repos
@@ -216,7 +221,7 @@ compare_branches() {
         header=$(echo -e "----------------------------------------~-----< $(pwd | xargs basename) >-----~----------------------------------------")
         footer=$(echo -e "________________________________________~______________________~________________________________________")
         git for-each-ref --format="%(refname:short) %(upstream:short)" refs/heads | \
-        while read local remote; do 
+        while read local remote; do
             [[ $1 == "origin/master" ]] && remote="origin/master"
 	    get_ahead_behind $local $remote
             echo -e "${local}~(ahead ${ahead}) | (behind ${behind})~$remote\n"
@@ -255,7 +260,7 @@ rebase_branches() {
             ask "Rebase this branch on $1" || echo -e "Skipping...\n"; continue
 	    git_rebase
             ask_if_skip_dirty_merge || continue
-	    ask_if_push 
+	    ask_if_push
         done
     done
 }
@@ -269,7 +274,7 @@ merge_into_branches() {
             ask "Merge origin/master into this branch" || echo "Skipping..."; continue
             git_merge
             ask_if_skip_dirty_merge || continue
-	    ask_if_push 
+	    ask_if_push
         done
     done
 }
@@ -294,7 +299,7 @@ clean_branches() {
 push_pull() {
     for path in $repos; do
         check_should_skip_repo || continue
-        git_get_branches 
+        git_get_branches
         for branch in $branches; do
             git_checkout $branch
             [[ "$auto" == true ]] || ask "pull+push" || continue
@@ -358,11 +363,11 @@ show_help() {
     echo    "Usage: gitmanage [OPTION]..."
     echo -e "Used to manage multiple branches across multiple git repositories\n"
 
-    echo    "  -F          Search for git repos" 
+    echo    "  -F          Search for git repos"
     echo -e "              Searches C: drive for git repos"
     echo -e "              (This must completed at least once to update the cache used by other functions)\n"
 
-    echo    "  -f          Fetch repos" 
+    echo    "  -f          Fetch repos"
     echo -e "              Fetch and prune all repos\n"
 
     echo    "  -s          Check for changes"
@@ -371,46 +376,46 @@ show_help() {
     echo    "  -S          List changes"
     echo -e "              List all changes in each repository which have not been comitted\n"
 
-    echo    "  -p          Pull and push" 
+    echo    "  -p          Pull and push"
     echo -e "              Prompts you to pull+push each branch in your git repositories\n"
 
-    echo    "  -P          Pull and push auto" 
+    echo    "  -P          Pull and push auto"
     echo -e "              Prompts you to pull+push each branch in your git repositories without asking confirmation for each branch\n"
 
-    echo    "  -c          Add all changes + commit + push" 
+    echo    "  -c          Add all changes + commit + push"
     echo -e "              Prompts you to add all changes + commit + push each git repository\n"
 
-    echo    "  -C          Add all changes + commit + push NO DIFF" 
+    echo    "  -C          Add all changes + commit + push NO DIFF"
     echo -e "              Prompts you to add all changes + commit + push each git repository but will not prompt to show diff\n"
 
-    echo    "  -b clean    Clean old branches" 
+    echo    "  -b clean    Clean old branches"
     echo -e "              Prompts you to delete any branches in your git repositories which are 0 commits ahead of origin/master\n"
 
-    echo    "  -m          Merge origin/master into branches" 
+    echo    "  -m          Merge origin/master into branches"
     echo -e "              Prompts you to merge origin/master into each branch in you git repositories\n"
 
-    echo    "  -r          Rebase branches" 
+    echo    "  -r          Rebase branches"
     echo -e "              Prompts you to rebase into each branch on the target branch in you git repositories\n"
 
-    echo    "  -b          List branches" 
+    echo    "  -b          List branches"
     echo -e "              Lists all the local branches in your git repositories\n"
 
-    echo    "  -ba         List all branches including remotes" 
+    echo    "  -ba         List all branches including remotes"
     echo -e "              Lists all the branches in your git repositories\n"
 
-    echo    "  -b master   Compare master" 
+    echo    "  -b master   Compare master"
     echo -e "              Compares each branch in your git repositories against origin/master\n"
 
-    echo    "  -B master   Compare master no fetch" 
+    echo    "  -B master   Compare master no fetch"
     echo -e "              Compares each branch in your git repositories against origin/master\n"
 
-    echo    "  -b remote   Compare remote" 
+    echo    "  -b remote   Compare remote"
     echo -e "              Compares each branch in your git repositories against it's remote branch\n"
 
-    echo    "  -B remote   Compare remote no fetch" 
+    echo    "  -B remote   Compare remote no fetch"
     echo -e "              Compares each branch in your git repositories against it's remote branch\n"
 
-    echo    "  -h          Help" 
+    echo    "  -h          Help"
     echo -e "              Displays this message"
 }
 
@@ -422,7 +427,7 @@ while getopts ":f::F::s::S::p::P::c::C::m::M::r::b::B::e::E::h:" opt; do
             set_repos
             if [[ $OPTARG == "clean" ]]; then clean_branches
 	    fi
-            git_fetch_all_repos 
+            git_fetch_all_repos
             if [[ $OPTARG == "master" ]]; then compare_branches "origin/master"
             elif [[ $OPTARG == "remote" ]]; then compare_branches "remote"
             else
@@ -448,7 +453,7 @@ while getopts ":f::F::s::S::p::P::c::C::m::M::r::b::B::e::E::h:" opt; do
         ;;
         r)
             set_repos
-	    git_fetch_all_repos 
+            git_fetch_all_repos
             if [[ $OPTARG == "master" ]]; then rebase_branches "origin/master"
             else
                 rebase_branches "$OPTARG"
@@ -476,7 +481,7 @@ while getopts ":f::F::s::S::p::P::c::C::m::M::r::b::B::e::E::h:" opt; do
                 elif [[ $OPTARG == "b" ]]; then list_branches
                 elif [[ $OPTARG == "B" ]]; then echo "TODO"
                 elif [[ $OPTARG == "e" ]]; then everything
-		elif [[ $OPTARG == "E" ]]; then auto=true; everything 
+		elif [[ $OPTARG == "E" ]]; then auto=true; everything
                 elif [[ $OPTARG == "h" ]]; then show_help
                 fi
             fi
@@ -490,10 +495,10 @@ done
 show_help
 while true; do
     opt=$(show_menu)
-    
+
     if [[ $opt == "Search for git repos" ]]; then
        echo -e "\nFinding git repos on C:"
-       find_repos "/c"
+       find_repos "$HOME"
     elif [[ $opt == "Quit" ]]; then
         break
     else
@@ -519,11 +524,11 @@ while true; do
         list_branches
     elif [[ $opt == "Compare master" ]]; then
         echo -e "\n${yellow}Compares each branch in your git repositories against origin/master\n${reset}"
-        git_fetch_all_repos 
+        git_fetch_all_repos
         compare_branches "origin/master"
     elif [[ $opt == "Compare remote" ]]; then
         echo -e "\n${yellow}Compares each branch in your git repositories against it's remote branch\n${reset}"
-        git_fetch_all_repos 
+        git_fetch_all_repos
         compare_branches "remote"
     elif [[ $opt == "Check for changes" ]]; then
         echo -e "\n${yellow}Checks each repository for changes which have not been comitted\n${reset}"
