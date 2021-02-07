@@ -444,15 +444,116 @@ show_help() {
     echo    "  -h          Help"
     echo -e "              Displays this message"
 }
+#Prints the help function
+show_help2() {
+    echo    "Usage: gitmanage [OPTION]..."
+    echo -e "Used to manage multiple branches across multiple git repositories\n"
 
+    echo    "  -F          Search for git repos"
+    echo -e "              Searches home directory for git repos"
+    echo -e "              (This must completed at least once to update the cache used by other functions)\n"
+
+    echo    "  -f          Fetch repos"
+    echo -e "              Fetch and prune all repos\n"
+
+    echo    "  -s          Check for changes"
+    echo -e "              Checks each repository for changes which have not been comitted and provides a simple summary\n"
+
+    echo    "  -S          List changes"
+    echo -e "              List all changes in each repository which have not been comitted\n"
+
+    echo    "  -p          Pull"
+    echo -e "              Prompts you to pull each branch in your git repositories\n"
+
+    echo    "  -ap         Auto pull"
+    echo -e "              Prompts you to pull each branch in your git repositories without asking confirmation for each branch\n"
+
+    echo    "  -Aap         Full auto pull"
+    echo -e "              Pull each branch in your git repositories without asking confirmation for each branch\n"
+
+    echo    "  -P          Pull and push"
+    echo -e "              Prompts you to pull+push each branch in your git repositories\n"
+
+    echo    "  -aP         Auto pull and push "
+    echo -e "              Prompts you to pull+push each of in your git repositories without asking confirmation for each branch\n"
+
+    echo    "  -AaP         Full auto pull and push "
+    echo -e "              pull+push each branch in your git repositories without asking confirmation for each branch\n"
+
+    echo    "  -c          Add all changes + commit + push"
+    echo -e "              Prompts you to add all changes + commit + push each git repository\n"
+
+    echo    "  -C          Add all changes + commit + push NO DIFF"
+    echo -e "              Prompts you to add all changes + commit + push each git repository but will not prompt to show diff\n"
+
+    echo    "  -b clean    Clean old branches"
+    echo -e "              Prompts you to delete any branches in your git repositories which are 0 commits ahead of origin/master\n"
+
+    echo    "  -m          Merge origin/master into branches"
+    echo -e "              Prompts you to merge origin/master into each branch in you git repositories\n"
+
+    echo    "  -r          Rebase branches"
+    echo -e "              Prompts you to rebase into each branch on the target branch in you git repositories\n"
+
+    echo    "  -b          List branches"
+    echo -e "              Lists all the local branches in your git repositories\n"
+
+    echo    "  -ba         List all branches including remotes"
+    echo -e "              Lists all the branches in your git repositories\n"
+
+    echo    "  -b master   Compare master"
+    echo -e "              Compares each branch in your git repositories against origin/master\n"
+
+    echo    "  -B master   Compare master no fetch"
+    echo -e "              Compares each branch in your git repositories against origin/master\n"
+
+    echo    "  -b remote   Compare remote"
+    echo -e "              Compares each branch in your git repositories against it's remote branch\n"
+
+    echo    "  -B remote   Compare remote no fetch"
+    echo -e "              Compares each branch in your git repositories against it's remote branch\n"
+
+    echo    "  -h          Help"
+    echo -e "              Displays this message"
+}
+
+
+die() { echo "$*" >&2; exit 2; }  # complain to STDERR and exit with error
+needs_arg() { if [ -z "$OPTARG" ]; then die "No arg for --$OPT option"; fi; }
 
 #Process args
-while getopts ":f::F::s::S::p::P::ap::aP::Ap::AP::Aap::AaP::c::C::m::M::r::b::B::e::E::h:" opt; do
-    case $opt in
+while getopts "eEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
+    if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
+      OPT="${OPTARG%%=*}"       # extract long option name
+      OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
+      OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
+    fi
+    set_repos
+    case "$OPT" in
+        f) git_fetch_all_repos && exit;;
+        s) repos_summary && exit;;
+        S) repos_status && exit;;
+        p) pull && exit;;
+        P) push_pull && exit;;
+        c) commit_and_push && exit;;
+        C) commit_and_push "NODIFF" && exit;;
+        m) echo "TODO deted merge conflicts" && exit;;
+        M) merge_into_branches && exit;;
+        r) rebase_branches "origin/master" && exit;;
+        b) list_branches && exit;;
+        B) echo "TODO" && exit;;
+        e) everything && exit;;
+        E) repo_auto=true; branch_auto=true; everything && exit;;
+        h) show_help && exit;;
+        ap) branch_auto=true; pull && exit;;
+        Ap) repo_auto=true; pull && exit;;
+        Aap) repo_auto=true; branch_auto=true; pull && exit;;
+        aP) branch_auto=true; push_pull && exit;;
+        AP) repo_auto=true; push_pull && exit;;
+        AaP) repo_auto=true; branch_auto=true; push_pull && exit;;
         b)
             set_repos
-            if [[ $OPTARG == "clean" ]]; then clean_branches
-	    fi
+            if [[ $OPTARG == "clean" ]]; then clean_branches; fi
             git_fetch_all_repos
             if [[ $OPTARG == "master" ]]; then compare_branches "origin/master"
             elif [[ $OPTARG == "remote" ]]; then compare_branches "remote"
@@ -486,42 +587,11 @@ while getopts ":f::F::s::S::p::P::ap::aP::Ap::AP::Aap::AaP::c::C::m::M::r::b::B:
             fi
             exit
         ;;
-        \?) #invalid flag
-            echo "Invalid option: -$OPTARG" >&2
-            exit
-        ;;
-        :) #arg missing param
-            if [[ $OPTARG == "F" ]]; then find_repos "$HOME"
-            else
-                set_repos
-                if   [[ $OPTARG == "f" ]]; then git_fetch_all_repos
-                elif [[ $OPTARG == "s" ]]; then repos_summary
-                elif [[ $OPTARG == "S" ]]; then repos_status
-                elif [[ $OPTARG == "p" ]]; then pull
-                elif [[ $OPTARG == "ap" ]]; then branch_auto=true; pull
-                elif [[ $OPTARG == "Ap" ]]; then repo_auto=true; pull
-                elif [[ $OPTARG == "Aap" ]]; then repo_auto=true; branch_auto=true; pull
-                elif [[ $OPTARG == "P" ]]; then push_pull
-                elif [[ $OPTARG == "aP" ]]; then branch_auto=true; push_pull
-                elif [[ $OPTARG == "AP" ]]; then repo_auto=true; push_pull
-                elif [[ $OPTARG == "AaP" ]]; then repo_auto=true; branch_auto=true; push_pull
-                elif [[ $OPTARG == "c" ]]; then commit_and_push
-                elif [[ $OPTARG == "C" ]]; then commit_and_push "NODIFF"
-                elif [[ $OPTARG == "m" ]]; then echo "TODO deted merge conflicts"
-                elif [[ $OPTARG == "M" ]]; then merge_into_branches
-                elif [[ $OPTARG == "r" ]]; then rebase_branches "origin/master"
-                elif [[ $OPTARG == "b" ]]; then list_branches
-                elif [[ $OPTARG == "B" ]]; then echo "TODO"
-                elif [[ $OPTARG == "e" ]]; then everything
-                elif [[ $OPTARG == "E" ]]; then repo_auto=true; branch_auto=true; everything
-                elif [[ $OPTARG == "h" ]]; then show_help
-                fi
-            fi
-            exit
-        ;;
-    esac
+        ??*) die "Illegal option --$OPT" ;;  # bad long option
+        ?) exit 2 ;;  # bad short option (error reported via getopts)
+  esac
 done
-
+shift $((OPTIND-1)) # remove parsed options and args from $@ list
 
 #Show menu
 show_help
