@@ -76,10 +76,34 @@ git_rebase() { echo "${magenta}Rebasing...${reset}" && git rebase $1; }
 git_checkout() { git checkout $1 2>&1 1>/dev/null | sed -E "s/(.+')(.+)('.*)/\1${blue}\2${reset}\3/"; }
 
 #Fetches a git repo
-git_fetch() { cd $1 && echo -e "${magenta}Fetching...${reset} $(colour_pwd)$(git fetch origin --prune 2>&1 >/dev/null)\n"; }
+git_fetch() {
+    cd $1
+    if [ -z $2 ]; then
+        echo -e "${magenta}Fetching...${reset} $(colour_pwd)"
+        git fetch origin --prune 2>&1 >/dev/null;
+    else
+        tput cup $2 0
+        echo -e "${magenta}Fetching...${reset} $(colour_pwd)"
+        git fetch origin --prune 2>&1 >/dev/null;
+        tput cup $2 0
+        echo -e "${magenta}Fetching...${reset} $(colour_pwd)    ${magenta}Done${reset}"
+    fi
+}
 
 #Fetches all repos
-git_fetch_all_repos() { for path in $repos; do git_fetch "$path/.."; done }
+git_fetch_all_repos() {
+    echo -e "\e[?1049h"
+    sleep 0.05
+    line_num=0
+    for path in $repos; do
+        git_fetch "$path/.." $line_num &
+        line_num=$((line_num+1))
+        sleep 0.01
+    done
+    wait
+    echo -e "\e[?1049l"
+    tput cuu 1
+}
 
 #Calls git status with ability to use cached value
 git_status() {
@@ -202,7 +226,13 @@ find_repos() {
 }
 
 #Displays a brief summary of all repos
-repos_summary() { for path in $repos; do cd "$path/.."; git_summary; done | column -t -c 1 -s ":"; }
+repos_summary() {
+    git_fetch_all_repos
+    for path in $repos; do
+        cd "$path/..";
+        git_summary;
+    done | column -t -c 1 -s ":";
+}
 
 #Displays the status of all repos
 repos_status() {
@@ -338,7 +368,7 @@ everything() {
     for path in $repos; do
         [[ "$repo_auto" == true ]] || ask "Update project $(colour_path)" || continue
         git_fetch "$path/.."
-	git_get_branches
+        git_get_branches
         for branch in $branches; do
 	    git_summary && continue
 	    ret="$?"
