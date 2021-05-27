@@ -1,12 +1,15 @@
 # gitmanager
-script to manage multiple repos with multiple branches
+##script to manage multiple repos with multiple branches
 
+### Install instructions
+* Install with `make install` to install program and add manpage entry.
 
-Install with `make install` or run the bash script `gitmanager` directly.
+or
+
+* run the bash script `gitmanager` directly.
 
 
 
 ### KNOWN ISSUES
 Auto cmds not currently working
 Some shortcut flags not working properly
-
