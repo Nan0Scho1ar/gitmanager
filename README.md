@@ -1,5 +1,5 @@
 # gitmanager
-##script to manage multiple repos with multiple branches
+## Script to manage multiple repos with multiple branches
 
 ### Install instructions
 * Install with `make install` to install program and add manpage entry.
