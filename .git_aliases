@@ -1,0 +1,171 @@
+##          # Git Aliases #
+##ga       git add (Add changes)
+alias ga='git add'
+##gaa       git add all (Add all changes)
+alias gaa='git add -A'
+##gaf       git add file (lists modified files in fzf and selected file will be added)
+alias gaf='git add `gdn | fzf -m --extended`'
+##guf       git unstage file (lists modified files in fzf and selected file will be added)
+alias guf='git reset -- `git diff --name-only --cached | fzf -m --extended`'
+
+##
+##gb        git branch (List local branches)
+alias gb='git branch | grep -n "^"'
+##gba       git branch all (List all branches)
+alias gba='git branch -a'
+##gbd       git branch delete [name] (Deletes a branch)
+alias gbd='git branch -d ${1}'
+##gbdf      git branch delete find (Opens banch list in fzf and deletes out the branch selected)
+alias gbdf='git branch -D $(git branch | fzf)'
+##gbn       git branch new [name] (Creates a new branch and checks it out)
+gbn() {
+    git branch ${1} && git checkout ${1}
+}
+##gbr       git branch remote (Lists all of the branches you have authored on the remote)
+alias gbr='git for-each-ref --format="%(authorname) %(refname)" | grep "$(git config user.name).*origin.*CM_"  | sed "s/^.*remotes\///"'
+
+##
+##gc        git commit (commits staged changes)
+alias gc='git commit'
+##gcm        git commit message (commits staged changes and prompts for commit message)
+gcm() {
+    if [ -n "$BASH_VERSION" ]; then
+       # assume Bash
+        read -p "Please enter commit message: " && git commit -m "$REPLY"
+    elif [ -n "$ZSH_VERSION" ]; then
+       # assume Zsh
+        read "REPLY?Please enter commit message: " && git commit -m "$REPLY"
+    #else
+       # assume something else
+    fi
+}
+##gca       git commit automatic (Commits staged changes with a very lazy automatic message)
+alias gca='git commit -am "Automatic Commit"'
+
+##
+##gchk      git checkout [name] (Checks out the branch with the supplied name)
+alias gchk='git checkout $1'
+##gchkf     git checkout find (Opens branch list in fzf and checks out the branch selected)
+alias gchkf='git checkout $(git branch | fzf)'
+##gchkaf     git checkout all find (Opens branch list including remotes in fzf and checks out the branch selected)
+alias gchkaf='git checkout $(git branch -a | fzf | sed 's_remotes/origin/__')'
+##gchkn     git checkout number [number] (Checks out the branch with the supplied number)
+gchkn() {
+    git branch | sed -n $1p | xargs git checkout
+}
+##gchkm       git checkout master (Checks out master)
+alias gchkm='git checkout master'
+
+##
+##grh       git reset head (Resets to head)
+alias grh='git reset HEAD'
+##grhh      git reset head hard (Hard resets to head discarding all changes)
+alias grhh='git reset HEAD --hard'
+##grhs      git reset head soft (Soft resets to head)
+alias grhs='git reset HEAD --soft'
+##grf       git reset file (lists unstaged files in fzf and selected file will be reset to HEAD all changes discarded)
+alias grf='git checkout HEAD -- `gdn | fzf -m --extended`'
+##gclean    git clean (Removes untracked files)
+alias gclean='git clean -df'
+##gfc       git full clean (Removes untracked files and all changes)
+alias gfc='git reset HEAD --hard; git clean -df'
+
+##
+##gd        git diff (Shows a diff of changes)
+alias gd='git diff $1'
+##gdf       git diff file (lists unstaged files in fzf and a diff will be dispalyed for the selected file)
+alias gdf='git diff --color=always `gdn | fzf -m --extended` | less -r'
+##gdn       git diff name (Shows a diff of changes [name only])
+alias gdn='git diff --name-only $1 | sort | uniq'
+##gdnm      git diff name master (Shows a diff of changes for master  branch [name only])
+alias gdnm='git diff --name-only master'
+##gds       git diff stat (Shows a diff of changes [name and line count])
+alias gds='git diff --stat $1'
+##gdsm      git diff stat master(Shows a diff of changes against master branch [name and line count])
+alias gdsm='git diff --stat master'
+
+##
+##gfo       git fetch origin (Fetch info on branches from origin)
+alias gfo='git fetch origin'
+##gfop      git fetch origin prune (Fetch info on branches from origin and prune deleted)
+alias gfop='git fetch origin --prune'
+
+##
+##gl        git log (Show the git log)
+alias gl='git log'
+##glo        git log oneline (Show the git log)
+alias glo='git log --pretty="oneline"'
+##glo        git log oneline (Show the git log)
+alias glol='git log --graph --oneline --decorate'
+##gld       git log decorated (Show the git log but fancy)
+alias gld='git log --oneline --graph --decorate --left-right --boundary --date-order'
+##glm       git log me (Show my commits in the git log)
+alias glm='git log --author="$(git config user.name)"'
+##glmc       git log me compact (Show my commits in the git log compact form)
+alias glmc='git log --pretty=oneline --author="$(git config user.name)"'
+alias glmc2='git log --pretty="[%Cblue%h%Creset]--[%cd]--[%cn] %s" --author="$(git config user.name)"'
+
+##
+##gm        git manage (Run git manage script)
+alias gm='bash ~/repos/gitmanager/gitmanager'
+
+##
+##gma       git merge abort (Aborts a git merge)
+alias gma='git merge --abort'
+##gmt       git merge test (Runs a test merge to see if there are any conflicts)
+alias gmt='echo "Testing merge..."; git merge --no-commit origin/master 1>/dev/null 2>/dev/null && git merge --abort 1>/dev/null 2>/dev/null && echo "${green}Can merge${reset}" && return || git merge --abort 1>/dev/null 2>/dev/null && echo "${red}Conflicts${reset}"'
+##gmc       git merge conflicts (Opens conflict list in fzf then edits the selected file in vim)
+alias gmc='code -r `git diff --name-only --diff-filter=U | fzf --extended`'
+##gmom      git merge origin/master (Merge origin/master into current branch)
+alias gmom='git merge origin/master'
+
+##
+##gpd       git pull down (git pull)
+alias gpd='git pull'
+##gpu       git push up (git push)
+alias gpu='git push'
+##gpuf      git push up force (Force push)
+alias gpuf='git push --force-with-lease'
+##gpuu      git push up upstream (git push and set the upstream for the remote)
+alias gpuu='git push --set-upstream origin $(git rev-parse --abbrev-ref HEAD)'
+
+##
+##gs        git status (git status)
+alias gs='git status'
+
+##
+##gsl       git stash list (Lists the stashes)
+alias gsl='git stash list'
+##gsp       git stash pop (Pops the stash)
+alias gsp='git stash pop'
+##gss       git stash show (Shows changes in the last stash)
+alias gss='git stash show -p'
+
+##
+gvprev() {
+    git show --color=always $(echo $1 | sed 's/\].*$//g' | sed 's/.*\[//g'):$2 | head -500
+    #(echo $1 | sed 's/\].*$//g' | sed 's/.*\[//g'; echo $2) | tr '\n' ':' | sed 's/:$//' | xargs git show --color=always
+    #(echo $1 | sed -E 's_^\[([0-9a-f]*)\].*$_\1_'; echo $2) | tr '\n' ':' | sed 's/:$//' | xargs git show --color=always
+}
+if [ -n "$BASH_VERSION" ]; then
+   # assume Bash
+    export -f gvprev
+   # assume Zsh
+#elif [ -n "$ZSH_VERSION" ]; then
+#else
+   # assume something else
+fi
+
+##gv        git version (find prev version of file)
+gv() {
+    if [ $# -eq 0 ]; then
+        fname=`fd --hidden --type file | fzf --extended --preview "head -500 {}" | tr '\\' '/'`
+    fi
+    hash=`git log --full-history --pretty="[%Cblue%H%Creset]--[%cd]--[%cn] %s" $fname | fzf --extended --preview "echo gvprev {} $fname | bash"` || return
+    hash=`echo $hash | sed -E 's_^\[([0-9a-f]*)\].*$_\1_'`
+    git show --color=always $hash:$fname | vim -c "doautocmd Filetype ${fname##*.}" -R - && gv 1
+}
+
+##
+##gh        git help (Displays this message)
+alias gh='cat ~/.config/.git_aliases | grep \#\# | grep -v "alias gh" | sed "s/##//"'
