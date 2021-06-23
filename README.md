@@ -17,6 +17,7 @@ Some shortcut flags not working properly
 
 # Git Aliases #
 # Aliases you might want to use from the .git_aliases file.
+| alias  | description                                                                                                |
 | ---    | ---                                                                                                        |
 | ga     | git add (Add changes)                                                                                      |
 | gaa    | git add all (Add all changes)                                                                              |
