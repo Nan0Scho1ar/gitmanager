@@ -593,7 +593,7 @@ while getopts "eEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
         h) show_help && exit;;
         ap) branch_auto=true; pull && exit;;
         Ap) repo_auto=true; pull && exit;;
-        Aap) repo_auto=true; branch_auto=true; pull && exit;;
+        sync) repo_auto=true; branch_auto=true; pull && exit;;
         aP) branch_auto=true; push_pull && exit;;
         AP) repo_auto=true; push_pull && exit;;
         AaP) repo_auto=true; branch_auto=true; push_pull && exit;;
