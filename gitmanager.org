@@ -678,7 +678,7 @@ while getopts "aAeEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
         h) show_help && exit;;
         a) branch_auto=true;;
         A) repo_auto=true;;
-        sync) repo_auto=true; branch_auto=true; pull && exit;;
+        sync) repo_auto=true; branch_auto=true; push_pull && exit;;
         b)
             set_repos
             if [[ $OPTARG == "clean" ]]; then clean_branches; fi
