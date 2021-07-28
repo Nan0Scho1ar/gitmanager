@@ -412,12 +412,18 @@ show_help() {
     echo    "Usage: gitmanage [OPTION]..."
     echo -e "Used to manage multiple branches across multiple git repositories\n"
 
-    echo    "  -F          Search for git repos"
-    echo -e "              Searches home directory for git repos"
-    echo -e "              (This must completed at least once to update the cache used by other functions)\n"
+    echo    " -a           Branch auto"
+    echo -e "              Automatically approves per branch confirmation prompts (To avoid pressing 'y' a bunch of times). Can be combined with -A\n"
+
+    echo    " -A           Repo auto"
+    echo -e "              Automatically approves per repo confirmation prompts (To avoid pressing 'y' a bunch of times). Can be combined with -a\n"
 
     echo    "  -f          Fetch repos"
     echo -e "              Fetch and prune all repos\n"
+
+    echo    "  -F          Search for git repos"
+    echo -e "              Searches home directory for git repos"
+    echo -e "              (This must completed at least once to update the cache used by other functions)\n"
 
     echo    "  -s          Check for changes"
     echo -e "              Checks each repository for changes which have not been comitted and provides a simple summary\n"
@@ -428,20 +434,8 @@ show_help() {
     echo    "  -p          Pull"
     echo -e "              Prompts you to pull each branch in your git repositories\n"
 
-    echo    "  -ap         Auto pull"
-    echo -e "              Prompts you to pull each branch in your git repositories without asking confirmation for each branch\n"
-
-    echo    "  -Aap         Full auto pull"
-    echo -e "              Pull each branch in your git repositories without asking confirmation for each branch\n"
-
     echo    "  -P          Pull and push"
     echo -e "              Prompts you to pull+push each branch in your git repositories\n"
-
-    echo    "  -aP         Auto pull and push "
-    echo -e "              Prompts you to pull+push each of in your git repositories without asking confirmation for each branch\n"
-
-    echo    "  -AaP         Full auto pull and push "
-    echo -e "              pull+push each branch in your git repositories without asking confirmation for each branch\n"
 
     echo    "  -c          Add all changes + commit + push"
     echo -e "              Prompts you to add all changes + commit + push each git repository\n"
@@ -449,17 +443,11 @@ show_help() {
     echo    "  -C          Add all changes + commit + push NO DIFF"
     echo -e "              Prompts you to add all changes + commit + push each git repository but will not prompt to show diff\n"
 
-    echo    "  -m          Merge origin/master into branches"
-    echo -e "              Prompts you to merge origin/master into each branch in you git repositories\n"
-
-    echo    "  -r          Rebase branches"
-    echo -e "              Prompts you to rebase into each branch on the target branch in you git repositories\n"
+    echo    "  -b master   Compare master"
+    echo -e "              Compares each branch in your git repositories against origin/master\n"
 
     echo    "  -b clean    Clean old branches"
     echo -e "              Prompts you to delete any branches in your git repositories which are 0 commits ahead of origin/master\n"
-
-    echo    "  -b master   Compare master"
-    echo -e "              Compares each branch in your git repositories against origin/master\n"
 
     echo    "  -B master   Compare master no fetch"
     echo -e "              Compares each branch in your git repositories against origin/master\n"
@@ -470,7 +458,13 @@ show_help() {
     echo    "  -B remote   Compare remote no fetch"
     echo -e "              Compares each branch in your git repositories against it's remote branch\n"
 
-    echo    "  -h          Help"
+    echo    "  -m          Merge origin/master into branches"
+    echo -e "              Prompts you to merge origin/master into each branch in you git repositories\n"
+
+    echo    "  -r          Rebase branches"
+    echo -e "              Prompts you to rebase into each branch on the target branch in you git repositories\n"
+
+    echo    "  -h --help   Help"
     echo -e "              Displays this message"
 }
 
