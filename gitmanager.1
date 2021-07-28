@@ -51,6 +51,22 @@ Prompts you to add all changes + commit + push each git repository
 Add all changes + commit + push NO DIFF
 Prompts you to add all changes + commit + push each git repository but will not prompt to show diff
 .TP
+.B \-m
+Merge origin/master into branches
+Prompts you to merge origin/master into each branch in your git repositories
+.TP
+.B \-M
+Automerge origin/master into branches
+Attempts to automatically merge origin/master into each branch in your git repositories
+.TP
+.B \-r
+Rebase branches
+Prompts you to rebase each branch on origin/master for each repo in your git repositories
+.TP
+.B \-R
+Autorebase branches
+Attempts to rebase each branch on origin/master for each repo in your git repositories
+.TP
 .B \-b clean
 Clean old branches
 Prompts you to delete any branches in your git repositories which are 0 commits ahead of origin/master
@@ -70,14 +86,6 @@ Compares each branch in your git repositories against it's remote branch
 .B \-B remote
 Compare remote no fetch
 Compares each branch in your git repositories against it's remote branch
-.TP
-.B \-m
-Merge origin/master into branches
-Prompts you to merge origin/master into each branch in you git repositories
-.TP
-.B \-r
-Rebase branches
-Prompts you to rebase into each branch on the target branch in you git repositories
 .TP
 .B \-\-sync
 push and pull all branches of all repositories

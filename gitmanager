@@ -290,7 +290,9 @@ rebase_branches() {
         check_should_skip_repo && git_get_branches || continue
         for branch in $branches; do
             git_checkout
-            ask "Rebase this branch on $1" || echo -e "Skipping...\n"; continue
+            if [[ $2 != "AUTOREBASE" ]]; then
+                ask "Rebase this branch on $1" || echo -e "Skipping...\n"; continue
+            fi
             git_rebase
             ask_if_skip_dirty_merge || continue
             ask_if_push
@@ -304,7 +306,9 @@ merge_into_branches() {
         check_should_skip_repo && git_get_branches || continue
         for branch in $branches; do
             git_checkout
-            ask "Merge origin/master into this branch" || echo "Skipping..."; continue
+            if [[ $1 != "AUTOMERGE" ]]; then
+                ask "Merge origin/master into this branch" || echo "Skipping..."; continue
+            fi
             git_merge
             ask_if_skip_dirty_merge || continue
             ask_if_push
@@ -412,10 +416,10 @@ show_help() {
     echo    "Usage: gitmanage [OPTION]..."
     echo -e "Used to manage multiple branches across multiple git repositories\n"
 
-    echo    " -a           Branch auto"
+    echo    "  -a          Branch auto"
     echo -e "              Automatically approves per branch confirmation prompts (To avoid pressing 'y' a bunch of times). Can be combined with -A\n"
 
-    echo    " -A           Repo auto"
+    echo    "  -A          Repo auto"
     echo -e "              Automatically approves per repo confirmation prompts (To avoid pressing 'y' a bunch of times). Can be combined with -a\n"
 
     echo    "  -f          Fetch repos"
@@ -443,6 +447,18 @@ show_help() {
     echo    "  -C          Add all changes + commit + push NO DIFF"
     echo -e "              Prompts you to add all changes + commit + push each git repository but will not prompt to show diff\n"
 
+    echo    "  -m          Merge origin/master into branches"
+    echo -e "              Prompts you to merge origin/master into each branch in your git repositories\n"
+
+    echo    "  -M          Automerge origin/master into branches"
+    echo -e "              Attempts to automatically merge origin/master into each branch in your git repositories\n"
+
+    echo    "  -r          Rebase branches"
+    echo -e "              Prompts you to rebase into each branch onto origin/master for every repo in your git repositories\n"
+
+    echo    "  -R          Autorebase branches"
+    echo -e "              Attempts to automatically rebase each branch onto origin/master for every repo in your git repositories\n"
+
     echo    "  -b master   Compare master"
     echo -e "              Compares each branch in your git repositories against origin/master\n"
 
@@ -457,12 +473,6 @@ show_help() {
 
     echo    "  -B remote   Compare remote no fetch"
     echo -e "              Compares each branch in your git repositories against it's remote branch\n"
-
-    echo    "  -m          Merge origin/master into branches"
-    echo -e "              Prompts you to merge origin/master into each branch in you git repositories\n"
-
-    echo    "  -r          Rebase branches"
-    echo -e "              Prompts you to rebase into each branch on the target branch in you git repositories\n"
 
     echo    "  -h --help   Help"
     echo -e "              Displays this message"
@@ -484,9 +494,10 @@ while getopts "aAeEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
         P) push_pull && exit;;
         c) commit_and_push && exit;;
         C) commit_and_push "NODIFF" && exit;;
-        m) echo "TODO deted merge conflicts" && exit;;
-        M) merge_into_branches && exit;;
+        m) merge_into_branches && exit;;
+        M) merge_into_branches "AUTOMERGE" && exit;;
         r) rebase_branches "origin/master" && exit;;
+        R) rebase_branches "origin/master" "AUTOREBASE" && exit;;
         e) everything && exit;;
         E) repo_auto=true; branch_auto=true; everything && exit;;
         h) show_help && exit;;
@@ -551,14 +562,14 @@ while true; do
     fi
 
     if [[ $opt == "Pull and push" ]]; then
-        echo -e "\n${yellow}Prompts you to pull+push each branch in you git repositories\n${reset}"
+        echo -e "\n${yellow}Prompts you to pull+push each branch in your git repositories\n${reset}"
         push_pull
     elif [[ $opt == "Pull and push auto" ]]; then
-        echo -e "\n${yellow}Prompts you to pull+push each branch in you git repositories\n${reset}"
+        echo -e "\n${yellow}Prompts you to pull+push each branch in your git repositories\n${reset}"
         branch_auto=true
         push_pull
     elif [[ $opt == "Add all changes + commit + push" ]]; then
-        echo -e "\n${yellow}Prompts you to Add all changes + commit + push each of you git repositories\n${reset}"
+        echo -e "\n${yellow}Prompts you to Add all changes + commit + push each of your git repositories\n${reset}"
         commit_and_push
     elif [[ $opt == "Clean old branches" ]]; then
         echo -e "\n${yellow}Prompts you to delete any branches in your git repositories which are 0 commits ahead of master\n${reset}"
@@ -581,7 +592,7 @@ while true; do
         echo -e "\n${yellow}Checks each repository for changes which have not been comitted\n${reset}"
         repos_status
     elif [[ $opt == "Merge origin/master into branches" ]]; then
-        echo -e "\n${yellow}Prompts you to merge origin/master into each branch in you git repositories\n${reset}"
+        echo -e "\n${yellow}Prompts you to merge origin/master into each branch in your git repositories\n${reset}"
         merge_into_branches
     fi
     echo
