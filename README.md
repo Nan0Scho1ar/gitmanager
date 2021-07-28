@@ -8,8 +8,34 @@ or
 
 * run the bash script `gitmanager` directly.
 
+### Command list
+|Flag|Summary|Description|
+--- | --- | ---
+|-F|Search for git repos| Searches home directory for git repos (This must completed at least once to update the cache used by other functions)|
+|-a|Branch auto| Automatically approves per branch confirmation prompts (To avoid pressing 'y' a bunch of times). Can be combined with -A|
+|-A|Repo auto| Automatically approves per repo confirmation prompts (To avoid pressing 'y' a bunch of times). Can be combined with -a|
+|-f|Fetch repos| Fetch and prune all repos|
+|-s|Check for changes| Checks each repository for changes which have not been comitted and provides a simple summary|
+|-S|List changes| List all changes in each repository which have not been comitted|
+|-p|Pull| Prompts you to pull each branch in your git repositories|
+|-P|Pull and push| Prompts you to pull+push each branch in your git repositories|
+|-c|Add all changes + commit + push| Prompts you to add all changes + commit + push each git repository|
+|-C|Add all changes + commit + push NO DIFF| Prompts you to add all changes + commit + push each git repository but will not prompt to show diff|
+|-m|Merge origin/master into branches| Prompts you to merge origin/master into each branch in your git repositories|
+|-M|Automerge origin/master into branches| Attempts to automatically merge origin/master into each branch in your git repositories|
+|-r|Rebase branches| Prompts you to rebase into each branch onto origin/master for every repo in your git repositories|
+|-R|Autorebase branches| Attempts to automatically rebase each branch onto origin/master for every repo in your git repositories|
+|-e|Everything| Prompts you to add, commit, pull, push all branches of all repos|
+|-E|Everything Auto| Attempts to automatically add, commit, pull, push all branches of all repos|
+|-b master|   Compare master| Compares each branch in your git repositories against origin/master|
+|-b clean|    Clean old branches| Prompts you to delete any branches in your git repositories which are 0 commits ahead of origin/master|
+|-B master|   Compare master no fetch| Compares each branch in your git repositories against origin/master|
+|-b remote|   Compare remote| Compares each branch in your git repositories against it's remote branch|
+|-B remote|   Compare remote no fetch| Compares each branch in your git repositories against it's remote branch|
+|-h --help|   Help| Displays this message|
+
 # Git Aliases #
-# Aliases you might want to use from the .git_aliases file.
+## Aliases you might want to use from the .git_aliases file.
 | alias  | description                                                                                                |
 | ---    | ---                                                                                                        |
 | ga     | git add (Add changes)                                                                                      |
