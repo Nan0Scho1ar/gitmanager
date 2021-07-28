@@ -8,13 +8,6 @@ or
 
 * run the bash script `gitmanager` directly.
 
-
-
-### KNOWN ISSUES
-Auto cmds not currently working
-Some shortcut flags not working properly
-
-
 # Git Aliases #
 # Aliases you might want to use from the .git_aliases file.
 | alias  | description                                                                                                |
