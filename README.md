@@ -35,6 +35,9 @@ or
 |--sync| Sync local and remote|Push and pull all branches of all repositories|
 |-h --help|   Help| Displays this message|
 
+### Breakdown
+For a quick breakdown of the code/documentation check [gitmanager.org](gitmanager.org)
+
 # Git Aliases #
 ## Aliases you might want to use from the .git_aliases file.
 | alias  | description                                                                                                |
