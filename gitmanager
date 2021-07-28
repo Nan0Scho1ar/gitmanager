@@ -403,6 +403,10 @@ everything() {
     done
 }
 
+die() { echo "$*" >&2; exit 2; }  # complain to STDERR and exit with error
+
+needs_arg() { if [ -z "$OPTARG" ]; then die "No arg for --$OPT option"; fi; }
+
 # Prints the help function
 show_help() {
     echo    "Usage: gitmanage [OPTION]..."
@@ -549,12 +553,8 @@ show_help2() {
     echo -e "              Displays this message"
 }
 
-die() { echo "$*" >&2; exit 2; }  # complain to STDERR and exit with error
-
-needs_arg() { if [ -z "$OPTARG" ]; then die "No arg for --$OPT option"; fi; }
-
 # Process args
-while getopts "eEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
+while getopts "aAeEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
     if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
       OPT="${OPTARG%%=*}"       # extract long option name
       OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
@@ -572,17 +572,12 @@ while getopts "eEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
         m) echo "TODO deted merge conflicts" && exit;;
         M) merge_into_branches && exit;;
         r) rebase_branches "origin/master" && exit;;
-        b) list_branches && exit;;
-        B) echo "TODO" && exit;;
         e) everything && exit;;
         E) repo_auto=true; branch_auto=true; everything && exit;;
         h) show_help && exit;;
-        ap) branch_auto=true; pull && exit;;
-        Ap) repo_auto=true; pull && exit;;
+        a) branch_auto=true;;
+        A) repo_auto=true;;
         sync) repo_auto=true; branch_auto=true; pull && exit;;
-        aP) branch_auto=true; push_pull && exit;;
-        AP) repo_auto=true; push_pull && exit;;
-        AaP) repo_auto=true; branch_auto=true; push_pull && exit;;
         b)
             set_repos
             if [[ $OPTARG == "clean" ]]; then clean_branches; fi
