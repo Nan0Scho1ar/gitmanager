@@ -662,7 +662,7 @@ while true; do
     opt=$(show_menu)
 
     if [[ $opt == "Search for git repos" ]]; then
-       echo -e "\nFinding git repos on C:"
+       echo -e "\nFinding git repos in \$HOME"
        find_repos "$HOME"
     elif [[ $opt == "Quit" ]]; then
         break
