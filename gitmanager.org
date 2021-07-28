@@ -577,6 +577,9 @@ show_help() {
     echo    "  -B remote   Compare remote no fetch"
     echo -e "              Compares each branch in your git repositories against it's remote branch\n"
 
+    echo    "  --sync      Sync local and remote"
+    echo -e "              Push and pull all branches of all repositories.\n"
+
     echo    "  -h --help   Help"
     echo -e "              Displays this message"
 }

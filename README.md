@@ -32,6 +32,7 @@ or
 |-B master|   Compare master no fetch| Compares each branch in your git repositories against origin/master|
 |-b remote|   Compare remote| Compares each branch in your git repositories against it's remote branch|
 |-B remote|   Compare remote no fetch| Compares each branch in your git repositories against it's remote branch|
+|--sync| Sync local and remote|Push and pull all branches of all repositories|
 |-h --help|   Help| Displays this message|
 
 # Git Aliases #
