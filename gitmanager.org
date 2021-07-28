@@ -513,6 +513,10 @@ show_help() {
     echo    "Usage: gitmanage [OPTION]..."
     echo -e "Used to manage multiple branches across multiple git repositories\n"
 
+    echo    "  -F          Search for git repos"
+    echo -e "              Searches home directory for git repos"
+    echo -e "              (This must completed at least once to update the cache used by other functions)\n"
+
     echo    "  -a          Branch auto"
     echo -e "              Automatically approves per branch confirmation prompts (To avoid pressing 'y' a bunch of times). Can be combined with -A\n"
 
@@ -521,10 +525,6 @@ show_help() {
 
     echo    "  -f          Fetch repos"
     echo -e "              Fetch and prune all repos\n"
-
-    echo    "  -F          Search for git repos"
-    echo -e "              Searches home directory for git repos"
-    echo -e "              (This must completed at least once to update the cache used by other functions)\n"
 
     echo    "  -s          Check for changes"
     echo -e "              Checks each repository for changes which have not been comitted and provides a simple summary\n"
@@ -555,6 +555,12 @@ show_help() {
 
     echo    "  -R          Autorebase branches"
     echo -e "              Attempts to automatically rebase each branch onto origin/master for every repo in your git repositories\n"
+
+    echo    "  -e          Everything"
+    echo -e "              Prompts you to add, commit, pull, push all branches of all repos\n"
+
+    echo    "  -E          Everything Auto"
+    echo -e "              Attempts to automatically add, commit, pull, push all branches of all repos\n"
 
     echo    "  -b master   Compare master"
     echo -e "              Compares each branch in your git repositories against origin/master\n"
@@ -714,88 +720,96 @@ git_manager is a script for managing multiple git repositories and branches
 git_manager has options for findiding and updating multiple repos
 .SH OPTIONS
 .TP
-.B \-a
-Branch auto
-Automatically approves per branch confirmation prompts (To avoid pressing 'y' a bunch of times). Can be combined with -A
-.TP
-.B \-A
-Repo auto
-Automatically approves per repo confirmation prompts (To avoid pressing 'y' a bunch of times). Can be combined with -a
-.TP
 .B \-F
-Search for git repos
+SEARCH FOR GIT REPOS.
 Searches home directory for git repos
 (This must completed at least once to update the cache used by other functions)
 .TP
+.B \-a
+BRANCH AUTO.
+Automatically approves per branch confirmation prompts (To avoid pressing 'y' a bunch of times). Can be combined with -A
+.TP
+.B \-A
+REPO AUTO.
+Automatically approves per repo confirmation prompts (To avoid pressing 'y' a bunch of times). Can be combined with -a
+.TP
 .B \-f
-Fetch repos
+FETCH REPOS.
 Fetch and prune all repos
 .TP
 .B \-s
-Check for changes
+CHECK FOR CHANGES.
 Checks each repository for changes which have not been comitted and provides a simple summary
 .TP
 .B \-S
-List changes
+LIST CHANGES.
 List all changes in each repository which have not been comitted
 .TP
 .B \-p
-Pull
+PULL.
 Prompts you to pull each branch in your git repositories
 .TP
 .B \-P
-Pull and push
+PULL AND PUSH.
 Prompts you to pull+push each branch in your git repositories
 .TP
 .B \-c
-Add all changes + commit + push
+ADD ALL CHANGES + COMMIT + PUSH.
 Prompts you to add all changes + commit + push each git repository
 .TP
 .B \-C
-Add all changes + commit + push NO DIFF
+ADD ALL CHANGES + COMMIT + PUSH NO DIFF.
 Prompts you to add all changes + commit + push each git repository but will not prompt to show diff
 .TP
 .B \-m
-Merge origin/master into branches
+MERGE ORIGIN/MASTER INTO BRANCHES.
 Prompts you to merge origin/master into each branch in your git repositories
 .TP
 .B \-M
-Automerge origin/master into branches
+AUTOMERGE ORIGIN/MASTER INTO BRANCHES.
 Attempts to automatically merge origin/master into each branch in your git repositories
 .TP
 .B \-r
-Rebase branches
+REBASE BRANCHES.
 Prompts you to rebase each branch on origin/master for each repo in your git repositories
 .TP
 .B \-R
-Autorebase branches
+AUTOREBASE BRANCHES.
 Attempts to rebase each branch on origin/master for each repo in your git repositories
 .TP
+.B \-e
+EVERYTHING.
+Prompts you to add, commit, pull, push all branches of all repos
+.TP
+.B \-E
+EVERYTHING AUTO.
+Attempts to automatically add, commit, pull, push all branches of all repos
+.TP
 .B \-b clean
-Clean old branches
+CLEAN OLD BRANCHES.
 Prompts you to delete any branches in your git repositories which are 0 commits ahead of origin/master
 .TP
 .B \-b master
-Compare master
+COMPARE MASTER.
 Compares each branch in your git repositories against origin/master
 .TP
 .B \-B master
-Compare master no fetch
+COMPARE MASTER NO FETCH.
 Compares each branch in your git repositories against origin/master
 .TP
 .B \-b remote
-Compare remote
+COMPARE REMOTE.
 Compares each branch in your git repositories against it's remote branch
 .TP
 .B \-B remote
-Compare remote no fetch
+COMPARE REMOTE NO FETCH.
 Compares each branch in your git repositories against it's remote branch
 .TP
 .B \-\-sync
-push and pull all branches of all repositories
+PUSH AND PULL ALL BRANCHES OF ALL REPOSITORIES.
 .TP
 .B \-h --help
-Help
+HELP.
 Displays this message
 .SH USAGE
 provide no args for interactive mode.

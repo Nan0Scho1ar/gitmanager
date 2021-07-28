@@ -416,6 +416,10 @@ show_help() {
     echo    "Usage: gitmanage [OPTION]..."
     echo -e "Used to manage multiple branches across multiple git repositories\n"
 
+    echo    "  -F          Search for git repos"
+    echo -e "              Searches home directory for git repos"
+    echo -e "              (This must completed at least once to update the cache used by other functions)\n"
+
     echo    "  -a          Branch auto"
     echo -e "              Automatically approves per branch confirmation prompts (To avoid pressing 'y' a bunch of times). Can be combined with -A\n"
 
@@ -424,10 +428,6 @@ show_help() {
 
     echo    "  -f          Fetch repos"
     echo -e "              Fetch and prune all repos\n"
-
-    echo    "  -F          Search for git repos"
-    echo -e "              Searches home directory for git repos"
-    echo -e "              (This must completed at least once to update the cache used by other functions)\n"
 
     echo    "  -s          Check for changes"
     echo -e "              Checks each repository for changes which have not been comitted and provides a simple summary\n"
@@ -458,6 +458,12 @@ show_help() {
 
     echo    "  -R          Autorebase branches"
     echo -e "              Attempts to automatically rebase each branch onto origin/master for every repo in your git repositories\n"
+
+    echo    "  -e          Everything"
+    echo -e "              Prompts you to add, commit, pull, push all branches of all repos\n"
+
+    echo    "  -E          Everything Auto"
+    echo -e "              Attempts to automatically add, commit, pull, push all branches of all repos\n"
 
     echo    "  -b master   Compare master"
     echo -e "              Compares each branch in your git repositories against origin/master\n"
