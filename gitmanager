@@ -176,7 +176,7 @@ ask() {
 # Asks the user if they want to push then pushes and shows status.
 ask_if_push() {
     git_checkout $branch | grep -q "but the upstream is gone." && echo -e "Remote has been deleted. Pushing will recreate it.\n"
-    ask "push" && git_push && git_status && echo
+    ask "Push" && git_push && git_status && echo
 }
 
 # Prompts the user to skip if the current branch is dirty
@@ -449,93 +449,14 @@ show_help() {
     echo    "  -C          Add all changes + commit + push NO DIFF"
     echo -e "              Prompts you to add all changes + commit + push each git repository but will not prompt to show diff\n"
 
-    echo    "  -b clean    Clean old branches"
-    echo -e "              Prompts you to delete any branches in your git repositories which are 0 commits ahead of origin/master\n"
-
     echo    "  -m          Merge origin/master into branches"
     echo -e "              Prompts you to merge origin/master into each branch in you git repositories\n"
 
     echo    "  -r          Rebase branches"
     echo -e "              Prompts you to rebase into each branch on the target branch in you git repositories\n"
 
-    echo    "  -b          List branches"
-    echo -e "              Lists all the local branches in your git repositories\n"
-
-    echo    "  -ba         List all branches including remotes"
-    echo -e "              Lists all the branches in your git repositories\n"
-
-    echo    "  -b master   Compare master"
-    echo -e "              Compares each branch in your git repositories against origin/master\n"
-
-    echo    "  -B master   Compare master no fetch"
-    echo -e "              Compares each branch in your git repositories against origin/master\n"
-
-    echo    "  -b remote   Compare remote"
-    echo -e "              Compares each branch in your git repositories against it's remote branch\n"
-
-    echo    "  -B remote   Compare remote no fetch"
-    echo -e "              Compares each branch in your git repositories against it's remote branch\n"
-
-    echo    "  -h          Help"
-    echo -e "              Displays this message"
-}
-
-# Prints the help function
-show_help2() {
-    echo    "Usage: gitmanage [OPTION]..."
-    echo -e "Used to manage multiple branches across multiple git repositories\n"
-
-    echo    "  -F          Search for git repos"
-    echo -e "              Searches home directory for git repos"
-    echo -e "              (This must completed at least once to update the cache used by other functions)\n"
-
-    echo    "  -f          Fetch repos"
-    echo -e "              Fetch and prune all repos\n"
-
-    echo    "  -s          Check for changes"
-    echo -e "              Checks each repository for changes which have not been comitted and provides a simple summary\n"
-
-    echo    "  -S          List changes"
-    echo -e "              List all changes in each repository which have not been comitted\n"
-
-    echo    "  -p          Pull"
-    echo -e "              Prompts you to pull each branch in your git repositories\n"
-
-    echo    "  -ap         Auto pull"
-    echo -e "              Prompts you to pull each branch in your git repositories without asking confirmation for each branch\n"
-
-    echo    "  -Aap         Full auto pull"
-    echo -e "              Pull each branch in your git repositories without asking confirmation for each branch\n"
-
-    echo    "  -P          Pull and push"
-    echo -e "              Prompts you to pull+push each branch in your git repositories\n"
-
-    echo    "  -aP         Auto pull and push "
-    echo -e "              Prompts you to pull+push each of in your git repositories without asking confirmation for each branch\n"
-
-    echo    "  -AaP         Full auto pull and push "
-    echo -e "              pull+push each branch in your git repositories without asking confirmation for each branch\n"
-
-    echo    "  -c          Add all changes + commit + push"
-    echo -e "              Prompts you to add all changes + commit + push each git repository\n"
-
-    echo    "  -C          Add all changes + commit + push NO DIFF"
-    echo -e "              Prompts you to add all changes + commit + push each git repository but will not prompt to show diff\n"
-
     echo    "  -b clean    Clean old branches"
     echo -e "              Prompts you to delete any branches in your git repositories which are 0 commits ahead of origin/master\n"
-
-    echo    "  -m          Merge origin/master into branches"
-    echo -e "              Prompts you to merge origin/master into each branch in you git repositories\n"
-
-    echo    "  -r          Rebase branches"
-    echo -e "              Prompts you to rebase into each branch on the target branch in you git repositories\n"
-
-    echo    "  -b          List branches"
-    echo -e "              Lists all the local branches in your git repositories\n"
-
-    echo    "  -ba         List all branches including remotes"
-    echo -e "              Lists all the branches in your git repositories\n"
 
     echo    "  -b master   Compare master"
     echo -e "              Compares each branch in your git repositories against origin/master\n"
@@ -577,7 +498,7 @@ while getopts "aAeEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
         h) show_help && exit;;
         a) branch_auto=true;;
         A) repo_auto=true;;
-        sync) repo_auto=true; branch_auto=true; pull && exit;;
+        sync) repo_auto=true; branch_auto=true; push_pull && exit;;
         b)
             set_repos
             if [[ $OPTARG == "clean" ]]; then clean_branches; fi

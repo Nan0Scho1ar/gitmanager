@@ -10,12 +10,79 @@ git_manager is a script for managing multiple git repositories and branches
 git_manager has options for findiding and updating multiple repos
 .SH OPTIONS
 .TP
+.B \-F
+Search for git repos
+Searches home directory for git repos
+(This must completed at least once to update the cache used by other functions)
+.TP
+.B \-f
+Fetch repos
+Fetch and prune all repos
+.TP
 .B \-s
-prints summary of known repos
-.P
+Check for changes
+Checks each repository for changes which have not been comitted and provides a simple summary
+.TP
 .B \-S
-prints a verbose summary of known repos
-.P
+List changes
+List all changes in each repository which have not been comitted
+.TP
+.B \-p
+Pull
+Prompts you to pull each branch in your git repositories
+.TP
+.B \-a
+Auto pull
+Prompts you to pull each branch in your git repositories without asking confirmation for each branch
+.TP
+.B \-A
+Full auto pull
+Pull each branch in your git repositories without asking confirmation for each branch
+.TP
+.B \-P
+Pull and push
+Prompts you to pull+push each branch in your git repositories
+.TP
+.B \-c
+Add all changes + commit + push
+Prompts you to add all changes + commit + push each git repository
+.TP
+.B \-C
+Add all changes + commit + push NO DIFF
+Prompts you to add all changes + commit + push each git repository but will not prompt to show diff
+.TP
+.B \-m
+Merge origin/master into branches
+Prompts you to merge origin/master into each branch in you git repositories
+.TP
+.B \-r
+Rebase branches
+Prompts you to rebase into each branch on the target branch in you git repositories
+.TP
+.B \-b clean
+Clean old branches
+Prompts you to delete any branches in your git repositories which are 0 commits ahead of origin/master
+.TP
+.B \-b master
+Compare master
+Compares each branch in your git repositories against origin/master
+.TP
+.B \-B master
+Compare master no fetch
+Compares each branch in your git repositories against origin/master
+.TP
+.B \-b remote
+Compare remote
+Compares each branch in your git repositories against it's remote branch
+.TP
+.B \-B remote
+Compare remote no fetch
+Compares each branch in your git repositories against it's remote branch
+.TP
+.B \-h
+Help
+Displays this message
+.TP
 .B \-\-sync
 push and pull all branches of all repositories
 .SH USAGE
