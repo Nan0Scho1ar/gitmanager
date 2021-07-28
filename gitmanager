@@ -1,19 +1,19 @@
 #!/bin/bash
-#gitmanager: Manage multiple git repositories and branches
-#Copyright (C) 2019-2021 Nan0Scho1ar (Christopher Mackinga)
+# gitmanager: Manage multiple git repositories and branches
+# Copyright (C) 2019-2021 Nan0Scho1ar (Christopher Mackinga)
 
-#This program is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-#This program is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-#You should have received a copy of the GNU General Public License
-#along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 options=("Search for git repos" "Check for changes" "List changes" "Pull and push" "Pull and push auto" "Add all changes + commit + push" "Clean old branches" "Merge origin/master into branches" "List branches" "Compare master" "Compare remote" "Quit")
 
@@ -22,7 +22,7 @@ if [ -t 1 ] && command -v tput > /dev/null; then
     ncolors=$(tput colors)
     if [ -n "$ncolors" ] && [ $ncolors -ge 8 ]; then
         bold="$(tput bold       || echo)"
-	blink="$(tput blink      || echo)"
+        blink="$(tput blink      || echo)"
         reset="$(tput sgr0      || echo)"
         black="$(tput setaf 0   || echo)"
         red="$(tput setaf 1     || echo)"
@@ -39,7 +39,6 @@ repos=""
 repo_auto=false
 branch_auto=false
 
-
 if [ -z $XDG_CONFIG_HOME ]; then
     cfg_path="$HOME/.config/gitmanager"
 else
@@ -47,7 +46,7 @@ else
 fi
 mkdir -p "$cfg_path"
 
-#Displays the option menu (if no args provided to program)
+# Displays the option menu (if no args provided to program)
 show_menu() {
     select option in "${options[@]}"; do
         echo $option
@@ -55,43 +54,43 @@ show_menu() {
     done
 }
 
-##Sets repos variable using cache files
+# Sets repos variable using cache files
 set_repos() { repos=$(cat ${cfg_path}/repos.cache | grep -v -f ${cfg_path}/repos.exclude); }
 
-##Sets repos and prints them to the user
+# Sets repos and prints them to the user
 using_repos() { set_repos && echo "Using repos:${cyan}$(cat ${cfg_path}/repos.cache | grep -vf ${cfg_path}/repos.exclude)${reset}"; }
 
-#pwd but coloured
+# pwd but coloured
 colour_pwd() { echo ${cyan}$(pwd)${reset}; }
 
-#path bub coloured
+# path bub coloured
 colour_path() { echo ${cyan}${path}${reset}; }
 
-#Used to make all calls to branch use the same formatting.
+# Used to make all calls to branch use the same formatting.
 git_branch() { git branch; }
 
-#Used to make all calls to commit use the same formatting.
+# Used to make all calls to commit use the same formatting.
 git_commit() { read -p "Please enter commit message: " && git commit -m "$REPLY"; }
 
-#Used to make all calls to push use the same formatting.
+# Used to make all calls to push use the same formatting.
 git_push() { echo "${magenta}Pushing...${reset}" && git push && echo; }
 
-#Used to make all calls to pull use the same formatting.
+# Used to make all calls to pull use the same formatting.
 git_pull() { echo "${magenta}Pulling...${reset}" && git pull; }
 
-#Used to make all calls to merge use the same formatting.
+# Used to make all calls to merge use the same formatting.
 git_merge() { echo "${magenta}Merging...${reset}" && git merge $1; }
 
-#Used to make all calls to merge use the same formatting.
+# Used to make all calls to merge use the same formatting.
 git_merge_abort() { echo "${magenta}Aborting Merge...${reset}" && git merge --abort; }
 
-#Used to make all calls to rebase use the same formatting.
+# Used to make all calls to rebase use the same formatting.
 git_rebase() { echo "${magenta}Rebasing...${reset}" && git rebase $1; }
 
-#Used to make all calls to checkout use the same formatting.
+# Used to make all calls to checkout use the same formatting.
 git_checkout() { git checkout $1 2>&1 1>/dev/null | sed -E "s/(.+')(.+)('.*)/\1${blue}\2${reset}\3/"; }
 
-#Fetches a git repo
+# Fetches a git repo
 git_fetch() {
     cd $1
     if [ -z $2 ]; then
@@ -106,7 +105,7 @@ git_fetch() {
     fi
 }
 
-#Fetches all repos
+# Fetches all repos
 git_fetch_all_repos() {
     echo -e "\e[?1049h"
     sleep 0.05
@@ -121,28 +120,19 @@ git_fetch_all_repos() {
     tput cuu 1
 }
 
-#Calls git status with ability to use cached value
+# Calls git status with ability to use cached value
 git_status() {
-#    if [[ "$1" == "CACHED" ]]; then
-#	echo $status
-#	return
-#    fi
-#    status=$(git status | sed "s/\n/\\n/")
-#    status=$(git status)
-#    echo $status
-	git status
+    git status
 }
 
-#Checks if the current branch working tree is clean. arg1 can be used to toggle CACHED
-tree_is_clean() { git_status $1 | grep -q "nothing to commit, working tree clean" && return 0 || return 1; }
+# Checks out master and updates list of branches
+git_get_branches() {
+    git_checkout master
+    branches=$(git for-each-ref --format='%(refname)' refs/heads/ | sed "s|refs/heads/||")
+    echo -e "\nFound branches:\n$(echo ${blue}${branches}${reset} | tr " " "\n")\n"
+}
 
-#Checks if the current branch is up to date. arg1 can be used to toggle CACHED
-branch_up_to_date() { git_status $1 | grep -q "Your branch is up to date with " && return 0 || return 1; }
-
-#Checks if the current branch has conflicts. arg1 can be used to toggle CACHED
-has_conflicts() { git_status $1 | grep -Eq "both added|both modified" && return 0 || return 1; }
-
-#Provides a one line summary on the current repo/branch
+# Provides a one line summary on the current repo/branch
 git_summary() {
     tree_is_clean && branch_up_to_date "CACHED" && echo "$(colour_pwd): ${green}No changes found${reset}" && return 0
     tree_is_clean "CACHED" && echo "$(colour_pwd): ${yellow}Out of sync${reset}" && return 1
@@ -150,35 +140,46 @@ git_summary() {
     echo "$(colour_pwd): ${red}Changes detected${reset}" && return 3
 }
 
-#Checks out master and updates list of branches
-git_get_branches() {
-    git_checkout master
-    branches=$(git for-each-ref --format='%(refname)' refs/heads/ | sed "s|refs/heads/||")
-    echo -e "\nFound branches:\n$(echo ${blue}${branches}${reset} | tr " " "\n")\n"
-}
+# Checks if the current branch working tree is clean. arg1 can be used to toggle CACHED
+tree_is_clean() { git_status $1 | grep -q "nothing to commit, working tree clean" && return 0 || return 1; }
 
-#Promts the user to answer a yes/no question.
-#Returns after a single char is entered without hitting return.
-ask() {
-    read -p "${1} ${yellow}y/n${reset} " -n 1 -r
-    echo
-    [[ $REPLY =~ ^[Yy]$ ]] && return 0 || return 1
-}
-
-#Asks the user if they want to push then pushes and shows status.
-ask_if_push() {
-    git_checkout $branch | grep -q "but the upstream is gone." && echo -e "Remote has been deleted. Pushing will recreate it.\n"
-    ask "push" && git_push && git_status && echo
-}
-
-#Checks if a repo should be skipped
+# Checks if a repo should be skipped
 check_should_skip_repo() {
     [[ "$repo_auto" == true ]] || ask "Update project $(colour_path)" || return 1
     git_fetch "$path/.."
     ask_if_skip_dirty && return 0 || echo; return 1
 }
 
-#Prompts the user to skip if the current branch is dirty
+# Checks if the current branch is up to date. arg1 can be used to toggle CACHED
+branch_up_to_date() { git_status $1 | grep -q "Your branch is up to date with " && return 0 || return 1; }
+
+# Checks if the current branch has conflicts. arg1 can be used to toggle CACHED
+has_conflicts() { git_status $1 | grep -Eq "both added|both modified" && return 0 || return 1; }
+
+# Checks how far ahead/behind a branch is
+get_ahead_behind() {
+    git_upstream_status_delta=$(git rev-list --left-right ${1}...${2} -- 2>/dev/null)
+    AHEAD=$(echo $git_upstream_status_delta | grep -c '^<');
+    BEHIND=$(echo $git_upstream_status_delta | grep -c '^>');
+    [[ "$AHEAD" == 0 ]] && ahead="${green}$AHEAD${reset}" || ahead="${red}$AHEAD${reset}"
+    [[ "$BEHIND" == 0 ]] && behind="${green}$BEHIND${reset}" || behind="${red}$BEHIND${reset}"
+}
+
+# Promts the user to answer a yes/no question.
+# Returns after a single char is entered without hitting return.
+ask() {
+    read -p "${1} ${yellow}y/n${reset} " -n 1 -r
+    echo
+    [[ $REPLY =~ ^[Yy]$ ]] && return 0 || return 1
+}
+
+# Asks the user if they want to push then pushes and shows status.
+ask_if_push() {
+    git_checkout $branch | grep -q "but the upstream is gone." && echo -e "Remote has been deleted. Pushing will recreate it.\n"
+    ask "push" && git_push && git_status && echo
+}
+
+# Prompts the user to skip if the current branch is dirty
 ask_if_skip_dirty() {
     tree_is_clean && return 0
     git_status
@@ -186,7 +187,7 @@ ask_if_skip_dirty() {
     ask_if_skip_dirty
 }
 
-#Prompts the user to skip if the current branch is dirty or revert the merge and continue
+# Prompts the user to skip if the current branch is dirty or revert the merge and continue
 ask_if_skip_dirty_merge() {
     tree_is_clean && return 0
     git_status
@@ -199,22 +200,7 @@ ask_if_skip_dirty_merge() {
     ask_if_skip_dirty_merge
 }
 
-#Checks how far ahead/behind a branch is
-get_ahead_behind() {
-    git_upstream_status_delta=$(git rev-list --left-right ${1}...${2} -- 2>/dev/null)
-    AHEAD=$(echo $git_upstream_status_delta | grep -c '^<');
-    BEHIND=$(echo $git_upstream_status_delta | grep -c '^>');
-    [[ "$AHEAD" == 0 ]] && ahead="${green}$AHEAD${reset}" || ahead="${red}$AHEAD${reset}"
-    [[ "$BEHIND" == 0 ]] && behind="${green}$BEHIND${reset}" || behind="${red}$BEHIND${reset}"
-}
-
-
-########################################################
-#######################  CMDS  #########################
-########################################################
-
-
-#Finds repos on the system
+# Finds repos on the system
 find_repos() {
     cd $1
     find ~+ -name .git -type d -prune 2> /dev/null  | grep -v -f ${cfg_path}/repos.cache >> ${cfg_path}/repos.cache
@@ -241,7 +227,7 @@ find_repos() {
     repos=$(cat ${cfg_path}/repos.cache | grep -v -f ${cfg_path}/repos.exclude)
 }
 
-#Displays a brief summary of all repos
+# Displays a brief summary of all repos
 repos_summary() {
     git_fetch_all_repos
     for path in $repos; do
@@ -250,17 +236,17 @@ repos_summary() {
     done | column -t -c 1 -s ":";
 }
 
-#Displays the status of all repos
+# Displays the status of all repos
 repos_status() {
     for path in $repos; do
         cd "$path/.."
         git_summary
-	git_status
-	echo -e '\n'
+        git_status
+        echo -e '\n'
     done
 }
 
-#Compares all the branches of all the repos to a specific branch
+# Compares all the branches of all the repos to a specific branch
 compare_branches() {
     [ -z "$1" ] && continue;
     for path in $repos; do
@@ -270,27 +256,27 @@ compare_branches() {
         git for-each-ref --format="%(refname:short) %(upstream:short)" refs/heads | \
         while read local remote; do
             [[ $1 == "origin/master" ]] && remote="origin/master"
-	    get_ahead_behind $local $remote
+            get_ahead_behind $local $remote
             echo -e "${local}~(ahead ${ahead}) | (behind ${behind})~$remote\n"
         done | echo -e "${header}\n$(cat)\n${footer}"
     done | cat | column -t -c 1 -s "~"
     echo
 }
 
-#Commit changes and push in all branches
+# Commit changes and push in all branches
 commit_and_push() {
     for path in $repos; do
         cd "$path/.."
-	git_summary && continue
-	[[ $? == 1 ]] && continue
+        git_summary && continue
+        [[ $? == 1 ]] && continue
         git_status
-        #prompt for diff unless NODIFF specified
+        # prompt for diff unless NODIFF specified
         [[ $1 != "NODIFF" ]] && ask "Show diff" && echo -e "$(git diff --color=always)\n"
 
         if ask "Stage all changes + commit"; then
             git add -A
             git_status
-	    git_commit
+            git_commit
             git_status
             ask_if_push
         fi
@@ -298,21 +284,21 @@ commit_and_push() {
     done
 }
 
-#Rebase all branches
+# Rebase all branches
 rebase_branches() {
     for path in $repos; do
         check_should_skip_repo && git_get_branches || continue
         for branch in $branches; do
             git_checkout
             ask "Rebase this branch on $1" || echo -e "Skipping...\n"; continue
-	    git_rebase
+            git_rebase
             ask_if_skip_dirty_merge || continue
-	    ask_if_push
+            ask_if_push
         done
     done
 }
 
-#Merge a branch into all branches
+# Merge a branch into all branches
 merge_into_branches() {
     for path in $repos; do
         check_should_skip_repo && git_get_branches || continue
@@ -321,12 +307,12 @@ merge_into_branches() {
             ask "Merge origin/master into this branch" || echo "Skipping..."; continue
             git_merge
             ask_if_skip_dirty_merge || continue
-	    ask_if_push
+            ask_if_push
         done
     done
 }
 
-#Clean old branches already merged into master
+# Clean old branches already merged into master
 clean_branches() {
     for path in $repos; do
        check_should_skip_repo && git_get_branches || continue
@@ -342,7 +328,7 @@ clean_branches() {
     done
 }
 
-#pull all branches
+# pull all branches
 pull() {
     for path in $repos; do
         check_should_skip_repo || continue
@@ -355,7 +341,7 @@ pull() {
     done
 }
 
-#push pull all branches
+# push pull all branches
 push_pull() {
     for path in $repos; do
         check_should_skip_repo || continue
@@ -370,7 +356,7 @@ push_pull() {
     done
 }
 
-#List all branches in all repos
+# List all branches in all repos
 list_branches() {
     for path in $repos; do
         echo "Branches in $(colour_path)"
@@ -379,46 +365,45 @@ list_branches() {
     done
 }
 
-#Bring everything up to date
+# Bring everything up to date
 everything() {
     for path in $repos; do
         [[ "$repo_auto" == true ]] || ask "Update project $(colour_path)" || continue
         git_fetch "$path/.."
         git_get_branches
         for branch in $branches; do
-	    git_summary && continue
-	    ret="$?"
-            #If out of sync then pull push
-	    if [[ "$ret" == 1 ]]; then
-                [[ "$branch_auto" == true ]] || ask "pull+push" || continue
-	        git_pull
-                ask_if_skip_dirty_merge || continue
-	        git_push
-            #If conflicts detected ask to skip (auto skip if auto enabled)
-            elif [[ "$ret" == 2 ]]; then
-                [[ "$branch_auto" == true ]] && continue
-                ask_if_skip_dirty_merge || continue
-	        git_push
-            #If changes detected, commit them
-            elif [[ "$ret" == 3 ]]; then
+        git_summary && continue
+        ret="$?"
+        # If out of sync then pull push
+        if [[ "$ret" == 1 ]]; then
+            [[ "$branch_auto" == true ]] || ask "pull+push" || continue
+            git_pull
+            ask_if_skip_dirty_merge || continue
+            git_push
+            # If conflicts detected ask to skip (auto skip if auto enabled)
+        elif [[ "$ret" == 2 ]]; then
+            [[ "$branch_auto" == true ]] && continue
+            ask_if_skip_dirty_merge || continue
+            git_push
+            # If changes detected, commit them
+        elif [[ "$ret" == 3 ]]; then
+            git_status
+            # prompt for diff unless NODIFF specified
+            [[ $1 != "NODIFF" ]] && ask "Show diff" && echo -e "$(git diff --color=always)\n"
+            if ask "Stage all changes + commit"; then
+                git add -A
                 git_status
-                #prompt for diff unless NODIFF specified
-                [[ $1 != "NODIFF" ]] && ask "Show diff" && echo -e "$(git diff --color=always)\n"
-                if ask "Stage all changes + commit"; then
-                    git add -A
-                    git_status
-	            git_commit
-                    git_status
-                    ask_if_push
-                fi
-                echo -e "$(git_status)\n\n"
-	    fi
+                git_commit
+                git_status
+                ask_if_push
+            fi
+            echo -e "$(git_status)\n\n"
+        fi
         done
     done
 }
 
-
-#Prints the help function
+# Prints the help function
 show_help() {
     echo    "Usage: gitmanage [OPTION]..."
     echo -e "Used to manage multiple branches across multiple git repositories\n"
@@ -490,7 +475,8 @@ show_help() {
     echo    "  -h          Help"
     echo -e "              Displays this message"
 }
-#Prints the help function
+
+# Prints the help function
 show_help2() {
     echo    "Usage: gitmanage [OPTION]..."
     echo -e "Used to manage multiple branches across multiple git repositories\n"
@@ -563,11 +549,11 @@ show_help2() {
     echo -e "              Displays this message"
 }
 
-
 die() { echo "$*" >&2; exit 2; }  # complain to STDERR and exit with error
+
 needs_arg() { if [ -z "$OPTARG" ]; then die "No arg for --$OPT option"; fi; }
 
-#Process args
+# Process args
 while getopts "eEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
     if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
       OPT="${OPTARG%%=*}"       # extract long option name
@@ -639,7 +625,7 @@ while getopts "eEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
 done
 shift $((OPTIND-1)) # remove parsed options and args from $@ list
 
-#Show menu
+# Show menu
 show_help
 while true; do
     opt=$(show_menu)
