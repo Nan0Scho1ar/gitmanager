@@ -1,6 +1,6 @@
 #+TITLE: gitmanager
 * File Header
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #!/bin/bash
 #gitmanager: Manage multiple git repositories and branches
 #Copyright (C) 2019-2021 Nan0Scho1ar (Christopher Mackinga)
@@ -20,7 +20,7 @@
 
 #+end_src
 * Setup
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 options=("Search for git repos" "Check for changes" "List changes" "Pull and push" "Pull and push auto" "Add all changes + commit + push" "Clean old branches" "Merge origin/master into branches" "List branches" "Compare master" "Compare remote" "Quit")
 
 if [ -t 1 ] && command -v tput > /dev/null; then
@@ -56,7 +56,7 @@ mkdir -p "$cfg_path"
 #+end_src
 * Helpers
 ** show_menu()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Displays the option menu (if no args provided to program)
 show_menu() {
     select option in "${options[@]}"; do
@@ -67,81 +67,81 @@ show_menu() {
 
 #+end_src
 ** set_repos()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 ##Sets repos variable using cache files
 set_repos() { repos=$(cat ${cfg_path}/repos.cache | grep -v -f ${cfg_path}/repos.exclude); }
 
 #+end_src
 ** using_repos()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 ##Sets repos and prints them to the user
 using_repos() { set_repos && echo "Using repos:${cyan}$(cat ${cfg_path}/repos.cache | grep -vf ${cfg_path}/repos.exclude)${reset}"; }
 
 #+end_src
 * Colour
 ** colour_pwd()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #pwd but coloured
 colour_pwd() { echo ${cyan}$(pwd)${reset}; }
 
 #+end_src
 ** colour_path
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #path bub coloured
 colour_path() { echo ${cyan}${path}${reset}; }
 
 #+end_src
 * Git funcs
 ** git_branch()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Used to make all calls to branch use the same formatting.
 git_branch() { git branch; }
 
 #+end_src
 ** git_commit()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Used to make all calls to commit use the same formatting.
 git_commit() { read -p "Please enter commit message: " && git commit -m "$REPLY"; }
 
 #+end_src
 ** git_push()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Used to make all calls to push use the same formatting.
 git_push() { echo "${magenta}Pushing...${reset}" && git push && echo; }
 
 #+end_src
 ** git_pull()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Used to make all calls to pull use the same formatting.
 git_pull() { echo "${magenta}Pulling...${reset}" && git pull; }
 
 #+end_src
 ** git_merge()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Used to make all calls to merge use the same formatting.
 git_merge() { echo "${magenta}Merging...${reset}" && git merge $1; }
 
 #+end_src
 ** git_merge_abort()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Used to make all calls to merge use the same formatting.
 git_merge_abort() { echo "${magenta}Aborting Merge...${reset}" && git merge --abort; }
 
 #+end_src
 ** git_rebase()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Used to make all calls to rebase use the same formatting.
 git_rebase() { echo "${magenta}Rebasing...${reset}" && git rebase $1; }
 
 #+end_src
 ** git_checkout()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Used to make all calls to checkout use the same formatting.
 git_checkout() { git checkout $1 2>&1 1>/dev/null | sed -E "s/(.+')(.+)('.*)/\1${blue}\2${reset}\3/"; }
 
 #+end_src
 ** git_fetch()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Fetches a git repo
 git_fetch() {
     cd $1
@@ -159,7 +159,7 @@ git_fetch() {
 
 #+end_src
 ** git_fetch_all_repos()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Fetches all repos
 git_fetch_all_repos() {
     echo -e "\e[?1049h"
@@ -177,7 +177,7 @@ git_fetch_all_repos() {
 
 #+end_src
 ** git_status()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Calls git status with ability to use cached value
 git_status() {
 #    if [[ "$1" == "CACHED" ]]; then
@@ -192,7 +192,7 @@ git_status() {
 
 #+end_src
 ** git_get_branches()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Checks out master and updates list of branches
 git_get_branches() {
     git_checkout master
@@ -202,7 +202,7 @@ git_get_branches() {
 
 #+end_src
 ** git_summary()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Provides a one line summary on the current repo/branch
 git_summary() {
     tree_is_clean && branch_up_to_date "CACHED" && echo "$(colour_pwd): ${green}No changes found${reset}" && return 0
@@ -214,13 +214,13 @@ git_summary() {
 #+end_src
 * Checks
 ** tree_is_clean()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Checks if the current branch working tree is clean. arg1 can be used to toggle CACHED
 tree_is_clean() { git_status $1 | grep -q "nothing to commit, working tree clean" && return 0 || return 1; }
 
 #+end_src
 ** check_should_skip_repo()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Checks if a repo should be skipped
 check_should_skip_repo() {
     [[ "$repo_auto" == true ]] || ask "Update project $(colour_path)" || return 1
@@ -230,19 +230,19 @@ check_should_skip_repo() {
 
 #+end_src
 ** branch_up_to_date()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Checks if the current branch is up to date. arg1 can be used to toggle CACHED
 branch_up_to_date() { git_status $1 | grep -q "Your branch is up to date with " && return 0 || return 1; }
 
 #+end_src
 ** has_conflicts()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Checks if the current branch has conflicts. arg1 can be used to toggle CACHED
 has_conflicts() { git_status $1 | grep -Eq "both added|both modified" && return 0 || return 1; }
 
 #+end_src
 ** get_ahead_behind()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Checks how far ahead/behind a branch is
 get_ahead_behind() {
     git_upstream_status_delta=$(git rev-list --left-right ${1}...${2} -- 2>/dev/null)
@@ -256,7 +256,7 @@ get_ahead_behind() {
 #+end_src
 * Ask
 ** ask()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Promts the user to answer a yes/no question.
 #Returns after a single char is entered without hitting return.
 ask() {
@@ -267,7 +267,7 @@ ask() {
 
 #+end_src
 ** ask_if_push()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Asks the user if they want to push then pushes and shows status.
 ask_if_push() {
     git_checkout $branch | grep -q "but the upstream is gone." && echo -e "Remote has been deleted. Pushing will recreate it.\n"
@@ -276,7 +276,7 @@ ask_if_push() {
 
 #+end_src
 ** ask_if_skip_repo()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Prompts the user to skip if the current branch is dirty
 ask_if_skip_dirty() {
     tree_is_clean && return 0
@@ -287,7 +287,7 @@ ask_if_skip_dirty() {
 
 #+end_src
 ** ask_if_skip_dirty_merge()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Prompts the user to skip if the current branch is dirty or revert the merge and continue
 ask_if_skip_dirty_merge() {
     tree_is_clean && return 0
@@ -304,7 +304,7 @@ ask_if_skip_dirty_merge() {
 #+end_src
 * Cmds
 ** find()_repos
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 ########################################################
 #######################  CMDS  #########################
 ########################################################
@@ -339,7 +339,7 @@ find_repos() {
 
 #+end_src
 ** repos_summary()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Displays a brief summary of all repos
 repos_summary() {
     git_fetch_all_repos
@@ -351,7 +351,7 @@ repos_summary() {
 
 #+end_src
 ** repos_status()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Displays the status of all repos
 repos_status() {
     for path in $repos; do
@@ -364,7 +364,7 @@ repos_status() {
 
 #+end_src
 ** compare_branches()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Compares all the branches of all the repos to a specific branch
 compare_branches() {
     [ -z "$1" ] && continue;
@@ -384,7 +384,7 @@ compare_branches() {
 
 #+end_src
 ** commit_and_push()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Commit changes and push in all branches
 commit_and_push() {
     for path in $repos; do
@@ -408,7 +408,7 @@ commit_and_push() {
 
 #+end_src
 ** rebase_branches()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Rebase all branches
 rebase_branches() {
     for path in $repos; do
@@ -425,7 +425,7 @@ rebase_branches() {
 
 #+end_src
 ** merge_into_branches()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Merge a branch into all branches
 merge_into_branches() {
     for path in $repos; do
@@ -442,7 +442,7 @@ merge_into_branches() {
 
 #+end_src
 ** clean_branches()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Clean old branches already merged into master
 clean_branches() {
     for path in $repos; do
@@ -461,7 +461,7 @@ clean_branches() {
 
 #+end_src
 ** pull()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #pull all branches
 pull() {
     for path in $repos; do
@@ -477,7 +477,7 @@ pull() {
 
 #+end_src
 ** push_pull()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #push pull all branches
 push_pull() {
     for path in $repos; do
@@ -495,7 +495,7 @@ push_pull() {
 
 #+end_src
 ** list_branches()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #List all branches in all repos
 list_branches() {
     for path in $repos; do
@@ -507,7 +507,7 @@ list_branches() {
 
 #+end_src
 ** everything()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Bring everything up to date
 everything() {
     for path in $repos; do
@@ -548,7 +548,7 @@ everything() {
 
 #+end_src
 ** show_help()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 
 #Prints the help function
 show_help() {
@@ -624,7 +624,7 @@ show_help() {
 }
 #+end_src
 ** show_help2()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Prints the help function
 show_help2() {
     echo    "Usage: gitmanage [OPTION]..."
@@ -699,17 +699,17 @@ show_help2() {
 }
 #+end_src
 ** die()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 
 
 die() { echo "$*" >&2; exit 2; }  # complain to STDERR and exit with error
 #+end_src
 ** needs_arg()
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 needs_arg() { if [ -z "$OPTARG" ]; then die "No arg for --$OPT option"; fi; }
 #+end_src
 * Process args
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 
 #Process args
 while getopts "eEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
@@ -785,7 +785,7 @@ shift $((OPTIND-1)) # remove parsed options and args from $@ list
 
 #+end_src
 * Show menu
-#+begin_src sh :tangle gitmanager.sh
+#+begin_src sh :tangle gitmanager
 #Show menu
 show_help
 while true; do
