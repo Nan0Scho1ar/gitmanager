@@ -1,5 +1,6 @@
 # gitmanager
 ## Script to manage multiple repos with multiple branches
+![repo summary example](example.png)
 
 ### Install instructions
 * Install with `make install` to install program and add manpage entry.
@@ -7,6 +8,14 @@
 or
 
 * run the bash script `gitmanager` directly.
+
+### Use
+Before you can use any of the other commands you must cache the location of your repos.
+This is accomplished with the `-F` (find) flag.
+E.G. to recursively search you `$HOME` directory for git repositories use `gitmanager -F ~`
+Once you have found some repos you may notice it has picked up some which you don't want to track.
+These can be excluded by copying the path of these repos from `repos.cache` to `repos.exclude`.
+These files can be found in `$XDG_CONFIG_HOME/gitmanager` (defaults to `~/.config/gitmanager` if variable unset).
 
 ### Command list
 |Flag|Summary|Description|
