@@ -622,7 +622,7 @@ show_help() {
 * Process args
 #+begin_src sh :tangle gitmanager
 # Process args
-while getopts "aAeEfsSpPcCmMFr:b:B:h:c-:" OPT; do
+while getopts "aAeEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
     if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
       OPT="${OPTARG%%=*}"       # extract long option name
       OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
