@@ -1,5 +1,5 @@
 # gitmanager Manage git repos
-#Copyright (C) 2019-2021 Nan0Scho1ar (Christopher Mackinga)
+# Copyright (C) 2019-2021 Nan0Scho1ar (Christopher Mackinga)
 # See LICENSE file for copyright and license details.
 
 include config.mk

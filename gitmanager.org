@@ -1,4 +1,39 @@
 #+TITLE: gitmanager
+* config.mk
+#+begin_src text :tangle config.mk
+# git_manager version
+VERSION = :0.8.1
+
+# Customize below to fit your system
+
+# paths
+PREFIX = /usr/local
+MANPREFIX = ${PREFIX}/share/man
+#+end_src
+* Makefile
+#+begin_src make :tangle Makefile
+# gitmanager Manage git repos
+# Copyright (C) 2019-2021 Nan0Scho1ar (Christopher Mackinga)
+# See LICENSE file for copyright and license details.
+
+include config.mk
+
+SRC = gitmanager
+
+install: all
+	mkdir -p ${DESTDIR}${PREFIX}/bin
+	cp -f ${SRC} ${DESTDIR}${PREFIX}/bin/gitmanager
+	chmod 755 ${DESTDIR}${PREFIX}/bin/gitmanager
+	mkdir -p ${DESTDIR}${MANPREFIX}/man1
+	sed "s/VERSION/${VERSION}/g" < gitmanager.1 > ${DESTDIR}${MANPREFIX}/man1/gitmanager.1
+	chmod 644 ${DESTDIR}${MANPREFIX}/man1/gitmanager.1
+
+uninstall:
+	rm -f ${DESTDIR}${PREFIX}/bin/gitmanager\
+		${DESTDIR}${MANPREFIX}/man1/gitmanager.1
+
+.PHONY: all install uninstall
+#+end_src
 * File Header
 #+begin_src sh :tangle gitmanager
 #!/bin/bash
@@ -587,7 +622,7 @@ show_help() {
 * Process args
 #+begin_src sh :tangle gitmanager
 # Process args
-while getopts "aAeEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
+while getopts "aAeEfsSpPcCmMFr:b:B:h:c-:" OPT; do
     if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
       OPT="${OPTARG%%=*}"       # extract long option name
       OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)

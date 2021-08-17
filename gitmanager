@@ -480,12 +480,15 @@ show_help() {
     echo    "  -B remote   Compare remote no fetch"
     echo -e "              Compares each branch in your git repositories against it's remote branch\n"
 
+    echo    "  --sync      Sync local and remote"
+    echo -e "              Push and pull all branches of all repositories.\n"
+
     echo    "  -h --help   Help"
     echo -e "              Displays this message"
 }
 
 # Process args
-while getopts "aAeEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
+while getopts "aAeEfsSpPcCmMFr:b:B:h:c-:" OPT; do
     if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
       OPT="${OPTARG%%=*}"       # extract long option name
       OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
@@ -558,7 +561,7 @@ while true; do
     opt=$(show_menu)
 
     if [[ $opt == "Search for git repos" ]]; then
-       echo -e "\nFinding git repos on C:"
+       echo -e "\nFinding git repos in \$HOME"
        find_repos "$HOME"
     elif [[ $opt == "Quit" ]]; then
         break
