@@ -39,6 +39,19 @@ gcm() {
        # assume something else
     fi
 }
+gacp() {
+    git add -A
+    if [ -n "$BASH_VERSION" ]; then
+       # assume Bash
+        read -p "Please enter commit message: " && git commit -m "$REPLY"
+    elif [ -n "$ZSH_VERSION" ]; then
+       # assume Zsh
+        read "REPLY?Please enter commit message: " && git commit -m "$REPLY"
+    #else
+       # assume something else
+    fi
+    git push
+}
 ##gca       git commit automatic (Commits staged changes with a very lazy automatic message)
 alias gca='git commit -am "Automatic Commit"'
 
@@ -107,7 +120,7 @@ alias glmc2='git log --pretty="[%Cblue%h%Creset]--[%cd]--[%cn] %s" --author="$(g
 
 ##
 ##gm        git manage (Run git manage script)
-alias gm='bash ~/repos/gitmanager/gitmanager'
+alias gm='bash $NREPOS/gitmanager/gitmanager'
 
 ##
 ##gma       git merge abort (Aborts a git merge)
@@ -168,4 +181,4 @@ gv() {
 
 ##
 ##gh        git help (Displays this message)
-alias gh='cat ~/.config/.git_aliases | grep \#\# | grep -v "alias gh" | sed "s/##//"'
+alias ghelp='cat ~/.config/.git_aliases | grep \#\# | grep -v "alias gh" | sed "s/##//"'
