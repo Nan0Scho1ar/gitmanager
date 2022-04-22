@@ -22,7 +22,7 @@ if [ -t 1 ] && command -v tput > /dev/null; then
     ncolors=$(tput colors)
     if [ -n "$ncolors" ] && [ $ncolors -ge 8 ]; then
         bold="$(tput bold       || echo)"
-        blink="$(tput blink      || echo)"
+        blink="$(tput blink     || echo)"
         reset="$(tput sgr0      || echo)"
         black="$(tput setaf 0   || echo)"
         red="$(tput setaf 1     || echo)"
@@ -140,6 +140,14 @@ git_summary() {
     echo "$(colour_pwd): ${red}Changes detected${reset}" && return 3
 }
 
+# Provides a one line summary on the current repo/branch
+git_state() {
+    tree_is_clean && branch_up_to_date "CACHED" && return 0
+    tree_is_clean "CACHED" && return 1
+    has_conflicts "CACHED" && return 2
+    return 3
+}
+
 # Checks if the current branch working tree is clean. arg1 can be used to toggle CACHED
 tree_is_clean() { git_status $1 | grep -q "nothing to commit, working tree clean" && return 0 || return 1; }
 
@@ -234,6 +242,30 @@ repos_summary() {
         cd "$path/..";
         git_summary;
     done | column -t -c 1 -s ":";
+}
+
+# Displays a brief summary of all repos
+repos_summary_compact() {
+    git_fetch_all_repos
+    total_repos=0
+    clean=0
+    out_of_sync=0
+    merge_conflicts=0
+    changes_detected=0
+    for path in $repos; do
+        cd "$path/..";
+        git_state
+        exit_code=$?
+        total_repos=$((total_repos+1))
+        case $exit_code in
+            0) clean=$((clean+1)) ;;
+            1) out_of_sync=$((out_of_sync+1)) ;;
+            2) merge_conflicts=$((merge_conflicts+1)) ;;
+            3) changes_detected=$((changes_detected+1)) ;;
+        esac
+    done
+    echo "Total Repos: $total_repos"
+    echo "Clean: $green$clean$reset | Out Of Sync: $yellow$out_of_sync$reset | Merge Conflicts: $red$merge_conflicts$reset | Changes Detected: $red$changes_detected$reset"
 }
 
 # Displays the status of all repos
@@ -411,6 +443,60 @@ die() { echo "$*" >&2; exit 2; }  # complain to STDERR and exit with error
 
 needs_arg() { if [ -z "$OPTARG" ]; then die "No arg for --$OPT option"; fi; }
 
+# Show menu
+tui() {
+    show_help
+    while true; do
+        opt=$(show_menu)
+
+        if [[ $opt == "Search for git repos" ]]; then
+        echo -e "\nFinding git repos in \$HOME"
+        find_repos "$HOME"
+        elif [[ $opt == "Quit" ]]; then
+            break
+        else
+            echo
+            using_repos
+        fi
+
+        if [[ $opt == "Pull and push" ]]; then
+            echo -e "\n${yellow}Prompts you to pull+push each branch in your git repositories\n${reset}"
+            push_pull
+        elif [[ $opt == "Pull and push auto" ]]; then
+            echo -e "\n${yellow}Prompts you to pull+push each branch in your git repositories\n${reset}"
+            branch_auto=true
+            push_pull
+        elif [[ $opt == "Add all changes + commit + push" ]]; then
+            echo -e "\n${yellow}Prompts you to Add all changes + commit + push each of your git repositories\n${reset}"
+            commit_and_push
+        elif [[ $opt == "Clean old branches" ]]; then
+            echo -e "\n${yellow}Prompts you to delete any branches in your git repositories which are 0 commits ahead of master\n${reset}"
+            clean_branches
+        elif [[ $opt == "List branches" ]]; then
+            echo -e "\n${yellow}Lists all the local branches in your git repositories\n${reset}"
+            list_branches
+        elif [[ $opt == "Compare master" ]]; then
+            echo -e "\n${yellow}Compares each branch in your git repositories against origin/master\n${reset}"
+            git_fetch_all_repos
+            compare_branches "origin/master"
+        elif [[ $opt == "Compare remote" ]]; then
+            echo -e "\n${yellow}Compares each branch in your git repositories against it's remote branch\n${reset}"
+            git_fetch_all_repos
+            compare_branches "remote"
+        elif [[ $opt == "Check for changes" ]]; then
+            echo -e "\n${yellow}Checks each repository for changes which have not been comitted\n${reset}"
+            repos_summary
+        elif [[ $opt == "List changes" ]]; then
+            echo -e "\n${yellow}Checks each repository for changes which have not been comitted\n${reset}"
+            repos_status
+        elif [[ $opt == "Merge origin/master into branches" ]]; then
+            echo -e "\n${yellow}Prompts you to merge origin/master into each branch in your git repositories\n${reset}"
+            merge_into_branches
+        fi
+        echo
+    done
+}
+
 # Prints the help function
 show_help() {
     echo    "Usage: gitmanage [OPTION]..."
@@ -488,7 +574,7 @@ show_help() {
 }
 
 # Process args
-while getopts "aAeEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
+while getopts "aAeEfsSpPcCmMhiF:r:b:B:c-:" OPT; do
     if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
       OPT="${OPTARG%%=*}"       # extract long option name
       OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
@@ -509,10 +595,11 @@ while getopts "aAeEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
         R) rebase_branches "origin/master" "AUTOREBASE" && exit;;
         e) everything && exit;;
         E) repo_auto=true; branch_auto=true; everything && exit;;
-        h) show_help && exit;;
+        h|help) show_help && exit;;
         a) branch_auto=true;;
         A) repo_auto=true;;
         sync) repo_auto=true; branch_auto=true; push_pull && exit;;
+        i|interactive) tui && exit;;
         b)
             set_repos
             if [[ $OPTARG == "clean" ]]; then clean_branches; fi
@@ -555,54 +642,5 @@ while getopts "aAeEfsSpPcCmMF:r:b:B:h:c-:" OPT; do
 done
 shift $((OPTIND-1)) # remove parsed options and args from $@ list
 
-# Show menu
-show_help
-while true; do
-    opt=$(show_menu)
-
-    if [[ $opt == "Search for git repos" ]]; then
-       echo -e "\nFinding git repos in \$HOME"
-       find_repos "$HOME"
-    elif [[ $opt == "Quit" ]]; then
-        break
-    else
-        echo
-        using_repos
-    fi
-
-    if [[ $opt == "Pull and push" ]]; then
-        echo -e "\n${yellow}Prompts you to pull+push each branch in your git repositories\n${reset}"
-        push_pull
-    elif [[ $opt == "Pull and push auto" ]]; then
-        echo -e "\n${yellow}Prompts you to pull+push each branch in your git repositories\n${reset}"
-        branch_auto=true
-        push_pull
-    elif [[ $opt == "Add all changes + commit + push" ]]; then
-        echo -e "\n${yellow}Prompts you to Add all changes + commit + push each of your git repositories\n${reset}"
-        commit_and_push
-    elif [[ $opt == "Clean old branches" ]]; then
-        echo -e "\n${yellow}Prompts you to delete any branches in your git repositories which are 0 commits ahead of master\n${reset}"
-        clean_branches
-    elif [[ $opt == "List branches" ]]; then
-        echo -e "\n${yellow}Lists all the local branches in your git repositories\n${reset}"
-        list_branches
-    elif [[ $opt == "Compare master" ]]; then
-        echo -e "\n${yellow}Compares each branch in your git repositories against origin/master\n${reset}"
-        git_fetch_all_repos
-        compare_branches "origin/master"
-    elif [[ $opt == "Compare remote" ]]; then
-        echo -e "\n${yellow}Compares each branch in your git repositories against it's remote branch\n${reset}"
-        git_fetch_all_repos
-        compare_branches "remote"
-    elif [[ $opt == "Check for changes" ]]; then
-        echo -e "\n${yellow}Checks each repository for changes which have not been comitted\n${reset}"
-        repos_summary
-    elif [[ $opt == "List changes" ]]; then
-        echo -e "\n${yellow}Checks each repository for changes which have not been comitted\n${reset}"
-        repos_status
-    elif [[ $opt == "Merge origin/master into branches" ]]; then
-        echo -e "\n${yellow}Prompts you to merge origin/master into each branch in your git repositories\n${reset}"
-        merge_into_branches
-    fi
-    echo
-done
+set_repos
+repos_summary_compact
