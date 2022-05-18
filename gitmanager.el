@@ -112,9 +112,6 @@
     (set (make-local-variable 'completed) '())
     (current-buffer)))
 
-
-
-
 (defun gitmanager-exec-async (cmd path out-buffer post-process)
   "CMD PATH OUT-BUFFER POST-PROCESS."
   (with-current-buffer (get-buffer-create (format "* %s Status*" path))
@@ -122,6 +119,7 @@
     (set (make-local-variable 'path) path)
     (set (make-local-variable 'out-buffer) out-buffer)
     (set (make-local-variable 'post-process) post-process)
+    (set (make-local-variable 'default-directory) path)
     (set-process-sentinel
      (start-process-shell-command
       (format "%s %s" cmd path) (current-buffer) cmd)
@@ -133,31 +131,53 @@
         (sent nil))
     (when (not (null buffer))
       (with-current-buffer buffer
-        (let ((output (list path (apply post-process (list (buffer-string)))))
+        (let ((output (apply post-process (list path e (buffer-string))))
               (path path))
+          (when (process-live-p p)
+            (kill-process p))
           (with-current-buffer out-buffer
             (while (not sent)
               (unless buffer-lock
                 (set 'buffer-lock buffer)
-                ;; (sleep-for 0.1)
                 (when (equal buffer-lock buffer)
-                  (format "paths = %s" paths)
-                  (insert (format "%s\n" output))
-                  (setq completed (cons path . completed))
+                  (insert output)
+                  (setq completed (cons path completed))
                   (setq buffer-lock nil)
-                  (setq sent t))))))))))
+                  (setq sent t)))))
+          (kill-buffer buffer))))))
 
 
-(defun gitmanager-state-async (paths)
-  "PATHS."
-  (let* ((buffname "* Gitmanager Repo Status Output *")
-        (outbuffer (gitmanager-create-async-output-buffer buffname paths)))
+(defun gitmanager-map-cmd-async (cmd paths buffname post-proc)
+  "CMD PATHS BUFNAME POST-PROC."
+  (let* ((outbuffer (gitmanager-create-async-output-buffer buffname paths)))
     (dolist (path paths)
-      (with)
-      (gitmanager-exec-async "git status" path outbuffer #'gitmanager-repo-state))
+      (gitmanager-exec-async cmd path outbuffer post-proc))
     outbuffer))
 
-(with-current-buffer (gitmanager-state-async (gitmanager-get-repos)) completed)
+(defun gitmanager-state-async (paths)
+  (let ((buffname "* Gitmanager Repo Status Output *")
+        (cmd "git status")
+        (post-proc #'gitmanager-state-async-post-proc))
+    (with-current-buffer (gitmanager-map-cmd-async cmd paths buffname post-proc)
+      completed)))
+
+(defun gitmanager-state-async-post-proc (path event result)
+  (format "%s\n" (list path (gitmanager-repo-state result))))
+
+(defun gitmanager-fetch-async (paths)
+  (let ((buffname "* Gitmanager Fetch Output *")
+        (cmd "git fetch")
+        (post-proc #'gitmanager-fetch-async-post-proc))
+    (gitmanager-map-cmd-async cmd paths buffname post-proc)))
+
+(defun gitmanager-fetch-async-post-proc (path event result)
+  (format "Fetching: %s ... %s" path event))
+
+
+;; (gitmanager-state-async (gitmanager-get-repos))
+(gitmanager-fetch-async (gitmanager-get-repos))
+
+;; (message "%s" (with-current-buffer (gitmanager-state-async (gitmanager-get-repos)) completed))
 
 (provide 'gitmanager)
 ;;; gitmanager.el ends here
