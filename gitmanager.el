@@ -146,13 +146,10 @@
   (format "%S\n" (list path (s-replace-regexp "\n$" "" event))))
 
 
-(defun gitmanager-repo-branch-name (path)
-  (s-replace-regexp "\n" ""
-                    (gitmanager-exec "git rev-parse --abbrev-ref HEAD" path)))
 
 
 
-(defun gitmanager-await (buffer)
+(defun gitmanager-wait-for-async-buffer (buffer)
   (let ((remaining t))
     (while remaining
       (sleep-for 1)
@@ -172,14 +169,20 @@
       (set (make-local-variable 'should-exit) nil))
     buffer))
 
-;; TODO may need buffer lock
+(defun gitmanager-create-async-eval-buffer (fn args)
+  (let ((buffer (generate-new-buffer "* GitManager Async Eval *" )))
+    (with-current-buffer buffer
+      (set (make-local-variable 'async-eval-fn) fn)
+      (set (make-local-variable 'async-eval-args) args)
+      (set (make-local-variable 'should-exit) t))
+    buffer))
+
 (defun gitmanager-loop (buffer)
   (let ((process
          (start-process-shell-command
           "gitmanager-async-handler"
           buffer "sleep 1")))
     (set-process-sentinel process 'gitmanager-loop-sentinel)))
-
 
 (defun gitmanager-loop-sentinel (process event)
   (let ((buffer (process-buffer process)))
@@ -192,9 +195,10 @@
           (message "%S" (apply async-eval-fn async-eval-args))
           (setq async-eval-fn nil
                 async-eval-args nil))
-        (when (and (buffer-live-p buffer)
-                   (not should-exit))
-          (gitmanager-loop buffer))))))
+        (if should-exit
+            (kill-buffer buffer)
+          (when (buffer-live-p buffer)
+            (gitmanager-loop buffer)))))))
 
 
 
@@ -207,8 +211,11 @@
   (gitmanager-loop-make-local-variable 'async-eval-fn fn)
   (gitmanager-loop-make-local-variable 'async-eval-args args))
 
-(defun gitmanager-async-eval-buffer-result (buffer)
-  (gitmanager-loop-apply-fn #'gitmanager-await (list buffer)))
+(defun gitmanager-await-buffer-result (buffer)
+  (gitmanager-async-apply #'gitmanager-wait-for-async-buffer (list buffer)))
+
+(defun gitmanager-async-apply (fn args)
+  (gitmanager-loop (gitmanager-create-async-eval-buffer fn args)))
 
 (defun gitmanager-loop-stop ()
   (gitmanager-loop-make-local-variable 'should-exit t))
@@ -217,18 +224,33 @@
   (setq gitmanager-loop-buffer (gitmanager-create-loop-buffer))
   (gitmanager-loop gitmanager-loop-buffer))
 
+(defun gitmanager-await ())
 
-(gitmanager-loop-start)
 
-(gitmanager-async-eval-buffer-result
+
+(gitmanager-async-apply
+ #'gitmanager-state-async (list (gitmanager-get-repos)))
+
+
+
+
+
+(gitmanager-await-buffer-result
  (gitmanager-state-async (gitmanager-get-repos)))
-
-(gitmanager-loop-stop)
 
 ;; (gitmanager-fetch-async (gitmanager-get-repos))
 ;; TODO Detect when complete
 
 ;; (message "%s" (with-current-buffer (gitmanager-state-async (gitmanager-get-repos)) completed))
+;;
+;;
+;;
+;;
+;;
+;;
+(defun gitmanager-repo-branch-name (path)
+  (s-replace-regexp "\n" ""
+                    (gitmanager-exec "git rev-parse --abbrev-ref HEAD" path)))
 
 (provide 'gitmanager)
 ;;; gitmanager.el ends here
