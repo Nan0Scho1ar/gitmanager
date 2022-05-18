@@ -19,62 +19,10 @@
 ;;
 ;;; Code:
 
-(defvar gitmanager-status-buffer "* Gitmanager Status *")
-(defvar gitmanager-error-buffer "* Gitmanager Error *")
-(defvar gitmanager-cache-dir "/home/nan0scho1ar/.config/gitmanager/")
-
-(defun gitmanager-tree-is-clean-p (state)
-  (string-search "nothing to commit, working tree clean" state))
-
-(defun gitmanager-branch-up-to-date-p (state)
-  (string-search "Your branch is up to date" state))
-
-(defun gitmanager-has-conflicts-p (state)
-  (or (string-search "both added" state)
-      (string-search "both modified" state)))
-
-(defun gitmanager-repo-check-state (state)
-  (cond ((and (gitmanager-tree-is-clean-p state)
-              (gitmanager-branch-up-to-date-p state)) 'clean)
-        ((gitmanager-tree-is-clean-p state) 'out-of-sync)
-        ((gitmanager-has-conflicts-p state) 'merge-conflict)
-        (t 'dirty)))
-
-(defun gitmanager-get-repos ()
-  (mapcar (lambda (x) (s-replace-regexp "\.git$" "" x))
-          (set-difference
-           (with-temp-buffer
-             (insert-file-contents (concat gitmanager-cache-dir "repos.cache"))
-             (split-string (buffer-string) "\n" t))
-           (with-temp-buffer
-             (insert-file-contents (concat gitmanager-cache-dir "repos.exclude"))
-             (split-string (buffer-string) "\n" t))
-           :test (lambda (a b) (equal a b)))))
-
-
-;; (gitmanager-repo-status test-dir)
-;; (gitmanager-repo-branch-name test-dir)
-;; (gitmanager-repo-state test-dir)
-
-;; (mapcar (lambda (x) (list x (gitmanager-repo-state x)))
-;;         (gitmanager-get-repos))
-
-
-;; (gitmanager-get-repos-cache)
-;; (gitmanager-get-repos-exclude)
-;; (gitmanager-get-repos)
 
 
 
-
-;; (defun gitmanager-exec (cmd path)
-;;   "CMD PATH."
-;;   (with-temp-buffer
-;;     (cd path)
-;;     (shell-command
-;;      cmd (current-buffer) gitmanager-error-buffer)
-;;     (buffer-string)))
-
+;; BEGIN EXEC AGGREGATE
 
 (defun gitmanager-create-async-output-buffer (outbuffer-name paths)
   "OUTBUFFER-NAME PATHS."
@@ -119,7 +67,6 @@
                   (setq sent t)))))
           (kill-buffer buffer))))))
 
-
 (defun gitmanager-map-cmd-async (cmd paths buffname post-proc)
   "CMD PATHS BUFNAME POST-PROC."
   (let* ((outbuffer (gitmanager-create-async-output-buffer buffname paths)))
@@ -127,10 +74,140 @@
       (gitmanager-exec-async cmd path outbuffer post-proc))
     outbuffer))
 
+;; END EXEC AGGREGATE
+
+
+
+;; MAIN LOOP BUFFER
+
+(defun gitmanager-create-async-eval-buffer (fn args loop)
+  (let ((buffer (generate-new-buffer "* GitManager Async Eval *" )))
+    (with-current-buffer buffer
+      (set (make-local-variable 'async-eval-fn) fn)
+      (set (make-local-variable 'async-eval-args) args)
+      (set (make-local-variable 'loop) loop)
+      (set (make-local-variable 'should-exit) t))
+    buffer))
+
+;; BEGIN MAIN LOOP
+
+(defun gitmanager-loop (buffer)
+  (let ((process (start-process-shell-command "gitmanager-async-handler" buffer "sleep 1")))
+    (set-process-sentinel process 'gitmanager-loop-sentinel)))
+
+(defun gitmanager-loop-sentinel (process event)
+  (let ((buffer (process-buffer process)))
+    (when (not (null buffer))
+      (with-current-buffer buffer
+        (when async-eval-fn
+          (let ((result (apply async-eval-fn async-eval-args)))
+            (if loop
+              (if (equal result 'gitmanager-loop-retry)
+                  (setq should-exit nil)
+                (setq should-exit t
+                      async-eval-fn nil
+                      async-eval-args nil))
+                (setq async-eval-fn nil
+                      async-eval-args nil))))
+        (if should-exit
+            (kill-buffer buffer)
+          (when (buffer-live-p buffer)
+            (gitmanager-loop buffer)))))))
+
+;; END MAIN LOOP
+
+
+;; begin loopvars (Unused)
+
+;; (setq gitmanager-loop-buffer-name "* GitManager Loop *")
+
+;; (defun gitmanager-create-loop-buffer ()
+;;   (let ((buffer (get-buffer-create gitmanager-loop-buffer-name)))
+;;     (with-current-buffer buffer
+;;       (set (make-local-variable 'async-eval-fn) nil)
+;;       (set (make-local-variable 'async-eval-args) nil)
+;;       (set (make-local-variable 'loop) nil)
+;;       (set (make-local-variable 'should-exit) nil))
+;;     buffer))
+
+;; (defun gitmanager-loop-make-local-variable (symbol value)
+;;   (with-current-buffer gitmanager-loop-buffer
+;;     (set (make-local-variable symbol) value)))
+
+;; (defun gitmanager-loop-apply-fn (fn args)
+;;   (gitmanager-loop-make-local-variable 'async-eval-fn fn)
+;;   (gitmanager-loop-make-local-variable 'async-eval-args args))
+
+;; (defun gitmanager-loop-stop ()
+;;   (gitmanager-loop-make-local-variable 'should-exit t))
+
+;; (defun gitmanager-loop-start ()
+;;   (setq gitmanager-loop-buffer (gitmanager-create-loop-buffer))
+;;   (gitmanager-loop gitmanager-loop-buffer))
+
+;; end loopvars (Unused)
+
+
+;; async await
+(defun gitmanager-async-apply (fn args)
+  (gitmanager-loop (gitmanager-create-async-eval-buffer fn args nil)))
+
+(defun gitmanager-async-exec (fn)
+  (gitmanager-async-apply fn '()))
+
+
+(defun gitmanager-async-wait-for-buffer (buffer)
+(gitmanager-loop (gitmanager-create-async-eval-buffer
+                  #'gitmanager-async-wait-for-buffer-test
+                  (list buffer) t)))
+
+(defun gitmanager-async-wait-for-buffer-test (buffer)
+  (if (null (with-current-buffer buffer (set-difference paths completed)))
+      (with-current-buffer buffer (buffer-string))
+    ;; Tell parent loop process to retry
+    'git-manager-loop-retry))
+
+
+;; BEGIN gitmanager funcs
+
+(defvar gitmanager-status-buffer "* Gitmanager Status *")
+(defvar gitmanager-error-buffer "* Gitmanager Error *")
+(defvar gitmanager-cache-dir "/home/nan0scho1ar/.config/gitmanager/")
+
+(defun gitmanager-tree-is-clean-p (state)
+  (string-search "nothing to commit, working tree clean" state))
+
+(defun gitmanager-branch-up-to-date-p (state)
+  (string-search "Your branch is up to date" state))
+
+(defun gitmanager-has-conflicts-p (state)
+  (or (string-search "both added" state)
+      (string-search "both modified" state)))
+
+(defun gitmanager-repo-check-state (state)
+  (cond ((and (gitmanager-tree-is-clean-p state)
+              (gitmanager-branch-up-to-date-p state)) 'clean)
+        ((gitmanager-tree-is-clean-p state) 'out-of-sync)
+        ((gitmanager-has-conflicts-p state) 'merge-conflict)
+        (t 'dirty)))
+
+(defun gitmanager-get-repos ()
+  (mapcar (lambda (x) (s-replace-regexp "\.git$" "" x))
+          (set-difference
+           (with-temp-buffer
+             (insert-file-contents (concat gitmanager-cache-dir "repos.cache"))
+             (split-string (buffer-string) "\n" t))
+           (with-temp-buffer
+             (insert-file-contents (concat gitmanager-cache-dir "repos.exclude"))
+             (split-string (buffer-string) "\n" t))
+           :test (lambda (a b) (equal a b)))))
+
+
+
 (defun gitmanager-state-async (paths)
   (let ((buffname "* Gitmanager Repo Status Output *")
-         (cmd "git status")
-         (post-proc #'gitmanager-state-async-post-proc))
+        (cmd "git status")
+        (post-proc #'gitmanager-state-async-post-proc))
     (gitmanager-map-cmd-async cmd paths buffname post-proc)))
 
 (defun gitmanager-state-async-post-proc (path event result)
@@ -146,98 +223,6 @@
   (format "%S\n" (list path (s-replace-regexp "\n$" "" event))))
 
 
-
-
-
-
-
-(setq gitmanager-loop-buffer-name "* GitManager Loop *")
-
-(defun gitmanager-create-loop-buffer ()
-  (let ((buffer (get-buffer-create gitmanager-loop-buffer-name)))
-    (with-current-buffer buffer
-      (set (make-local-variable 'async-eval-fn) nil)
-      (set (make-local-variable 'async-eval-args) nil)
-      (set (make-local-variable 'loop) nil)
-      (set (make-local-variable 'should-exit) nil))
-    buffer))
-
-(defun gitmanager-create-async-eval-buffer (fn args)
-  (let ((buffer (generate-new-buffer "* GitManager Async Eval *" )))
-    (with-current-buffer buffer
-      (set (make-local-variable 'async-eval-fn) fn)
-      (set (make-local-variable 'async-eval-args) args)
-      (set (make-local-variable 'loop) nil)
-      (set (make-local-variable 'should-exit) t))
-    buffer))
-
-(defun gitmanager-create-await-eval-buffer (fn args)
-  (let ((buffer (generate-new-buffer "* GitManager Async Eval *" )))
-    (with-current-buffer buffer
-      (set (make-local-variable 'async-eval-fn) fn)
-      (set (make-local-variable 'async-eval-args) args)
-      (set (make-local-variable 'loop) t)
-      (set (make-local-variable 'should-exit) nil))
-    buffer))
-
-(defun gitmanager-loop (buffer)
-  (let ((process
-         (start-process-shell-command
-          "gitmanager-async-handler"
-          buffer "sleep 1")))
-    (set-process-sentinel process 'gitmanager-loop-sentinel)))
-
-(defun gitmanager-loop-sentinel (process event)
-  (let ((buffer (process-buffer process)))
-    (when (not (null buffer))
-      (with-current-buffer buffer
-        (message "Ping!")
-        (when async-eval-fn
-          (let ((result (apply async-eval-fn async-eval-args)))
-            (unless loop
-              (setq async-eval-fn nil
-                    async-eval-args nil))
-            (if (equal result 'gitmanager-loop-retry)
-                (setq should-exit nil)
-              (setq should-exit t
-                    async-eval-fn nil
-                    async-eval-args nil))))
-        (if should-exit
-            (kill-buffer buffer)
-          (when (buffer-live-p buffer)
-            (gitmanager-loop buffer)))))))
-
-
-
-;; loopvars
-(defun gitmanager-loop-make-local-variable (symbol value)
-  (with-current-buffer gitmanager-loop-buffer
-    (set (make-local-variable symbol) value)))
-
-(defun gitmanager-loop-apply-fn (fn args)
-  (gitmanager-loop-make-local-variable 'async-eval-fn fn)
-  (gitmanager-loop-make-local-variable 'async-eval-args args))
-
-(defun gitmanager-loop-stop ()
-  (gitmanager-loop-make-local-variable 'should-exit t))
-
-(defun gitmanager-loop-start ()
-  (setq gitmanager-loop-buffer (gitmanager-create-loop-buffer))
-  (gitmanager-loop gitmanager-loop-buffer))
-
-
-
-;; async await
-(defun gitmanager-async-apply (fn args)
-  (gitmanager-loop (gitmanager-create-async-eval-buffer fn args)))
-
-(defun gitmanager-async-exec (fn)
-  (gitmanager-async-apply fn '()))
-
-(defun gitmanager-await-buffer-result (buffer)
-  (gitmanager-async-apply #'gitmanager-wait-for-async-buffer (list buffer)))
-
-
 (defun gitmanager-fetch-and-state ()
   (let ((repos (gitmanager-get-repos)))
     (gitmanager-async-wait-for-buffer
@@ -245,27 +230,8 @@
     (gitmanager-async-wait-for-buffer
      (gitmanager-state-async repos))))
 
-(defun gitmanager-wait-for-async-buffer (buffer)
-  (let ((remaining t))
-    (while remaining
-      (sleep-for 1)
-      (setq remaining
-            (with-current-buffer buffer (set-difference paths completed))))
-    (with-current-buffer buffer (buffer-string))))
 
-(defun gitmanager-async-wait-for-buffer (buffer)
-(gitmanager-loop (gitmanager-create-await-eval-buffer
-                  #'gitmanager-async-wait-for-buffer-test
-                  (list buffer))))
-
-(defun gitmanager-async-wait-for-buffer-test (buffer)
-  (if (null (with-current-buffer buffer (set-difference paths completed)))
-      (with-current-buffer buffer (buffer-string))
-    ;; Tell parent loop process to retry
-    'git-manager-loop-retry))
-
-
-
+;; END gitmanager funcs
 
 ;; Testing
 ;; (gitmanager-async-apply
@@ -278,19 +244,56 @@
 
 
 ;; (gitmanager-fetch-async (gitmanager-get-repos))
-;; TODO Detect when complete
+
 (gitmanager-async-exec #'gitmanager-fetch-and-state)
 
 ;; (message "%s" (with-current-buffer (gitmanager-state-async (gitmanager-get-repos)) completed))
-;;
-;;
-;;
-;;
-;; OTHER
-;;
+
+
+;; TODO BRANCH NAME
 ;; (defun gitmanager-repo-branch-name (path)
 ;;   (s-replace-regexp "\n" ""
 ;;                     (gitmanager-exec "git rev-parse --abbrev-ref HEAD" path)))
+
+
+;;
+;; OTHER
+;;
+;;
+;; (gitmanager-repo-status test-dir)
+;; (gitmanager-repo-branch-name test-dir)
+;; (gitmanager-repo-state test-dir)
+
+;; (mapcar (lambda (x) (list x (gitmanager-repo-state x)))
+;;         (gitmanager-get-repos))
+
+
+;; (gitmanager-get-repos-cache)
+;; (gitmanager-get-repos-exclude)
+;; (gitmanager-get-repos)
+
+
+
+
+;; (defun gitmanager-exec (cmd path)
+;;   "CMD PATH."
+;;   (with-temp-buffer
+;;     (cd path)
+;;     (shell-command
+;;      cmd (current-buffer) gitmanager-error-buffer)
+;;     (buffer-string)))
+
+;; (defun gitmanager-wait-for-async-buffer (buffer)
+;;   (let ((remaining t))
+;;     (while remaining
+;;       (sleep-for 1)
+;;       (setq remaining
+;;             (with-current-buffer buffer (set-difference paths completed))))
+;;     (with-current-buffer buffer (buffer-string))))
+
+;; (defun gitmanager-await-buffer-result (buffer)
+;;   (gitmanager-async-apply #'gitmanager-wait-for-async-buffer (list buffer)))
+
 
 (provide 'gitmanager)
 ;;; gitmanager.el ends here
