@@ -19,12 +19,9 @@
 ;;
 ;;; Code:
 
-
-
-
 ;; BEGIN EXEC AGGREGATE
 
-(defun gitmanager-create-async-output-buffer (outbuffer-name paths)
+(defun gitmanager-create-aggregate-output-buffer (outbuffer-name paths)
   "OUTBUFFER-NAME PATHS."
   (with-current-buffer (get-buffer-create outbuffer-name)
     (erase-buffer)
@@ -67,9 +64,9 @@
                   (setq sent t)))))
           (kill-buffer buffer))))))
 
-(defun gitmanager-map-cmd-async (cmd paths buffname post-proc)
+(defun gitmanager-exec-map-cmd-async (cmd paths buffname post-proc)
   "CMD PATHS BUFNAME POST-PROC."
-  (let* ((outbuffer (gitmanager-create-async-output-buffer buffname paths)))
+  (let* ((outbuffer (gitmanager-create-aggregate-output-buffer buffname paths)))
     (dolist (path paths)
       (gitmanager-exec-async cmd path outbuffer post-proc))
     outbuffer))
@@ -208,7 +205,7 @@
   (let ((buffname "* Gitmanager Repo Status Output *")
         (cmd "git status")
         (post-proc #'gitmanager-state-async-post-proc))
-    (gitmanager-map-cmd-async cmd paths buffname post-proc)))
+    (gitmanager-exec-map-cmd-async cmd paths buffname post-proc)))
 
 (defun gitmanager-state-async-post-proc (path event result)
   (format "%S\n" (list path (gitmanager-repo-check-state result))))
@@ -217,7 +214,7 @@
   (let ((buffname "* Gitmanager Fetch Output *")
         (cmd "git fetch")
         (post-proc #'gitmanager-fetch-async-post-proc))
-    (gitmanager-map-cmd-async cmd paths buffname post-proc)))
+    (gitmanager-exec-map-cmd-async cmd paths buffname post-proc)))
 
 (defun gitmanager-fetch-async-post-proc (path event result)
   (format "%S\n" (list path (s-replace-regexp "\n$" "" event))))
