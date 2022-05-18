@@ -65,7 +65,9 @@
           (kill-buffer buffer))))))
 
 (defun gitmanager-exec-map-cmd-async (cmd paths buffname post-proc)
-  "CMD PATHS BUFNAME POST-PROC."
+  "CMD PATHS BUFNAME POST-PROC.
+Asyncronosly run many commands and aggregate all the results into a single buffer.
+returns results buffer (needs to be awaited)"
   (let* ((outbuffer (gitmanager-exec-create-aggregate-output-buffer buffname paths)))
     (dolist (path paths)
       (gitmanager-exec-async cmd path outbuffer post-proc))
