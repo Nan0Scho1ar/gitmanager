@@ -1,5 +1,5 @@
 ##          # Git Aliases #
-##ga       git add (Add changes)
+##ga        git add (Add changes)
 alias ga='git add'
 ##gaa       git add all (Add all changes)
 alias gaa='git add -A'
@@ -27,7 +27,7 @@ alias gbr='git for-each-ref --format="%(authorname) %(refname)" | grep "$(git co
 ##
 ##gc        git commit (commits staged changes)
 alias gc='git commit'
-##gcm        git commit message (commits staged changes and prompts for commit message)
+##gcm       git commit message (commits staged changes and prompts for commit message)
 gcm() {
     if [ -n "$BASH_VERSION" ]; then
        # assume Bash
@@ -60,13 +60,13 @@ alias gca='git commit -am "Automatic Commit"'
 alias gchk='git checkout $1'
 ##gchkf     git checkout find (Opens branch list in fzf and checks out the branch selected)
 alias gchkf='git checkout $(git branch | fzf)'
-##gchkaf     git checkout all find (Opens branch list including remotes in fzf and checks out the branch selected)
+##gchkaf    git checkout all find (Opens branch list including remotes in fzf and checks out the branch selected)
 alias gchkaf='git checkout $(git branch -a | fzf | sed 's_remotes/origin/__')'
 ##gchkn     git checkout number [number] (Checks out the branch with the supplied number)
 gchkn() {
     git branch | sed -n $1p | xargs git checkout
 }
-##gchkm       git checkout master (Checks out master)
+##gchkm     git checkout master (Checks out master)
 alias gchkm='git checkout master'
 
 ##
@@ -106,15 +106,15 @@ alias gfop='git fetch origin --prune'
 ##
 ##gl        git log (Show the git log)
 alias gl='git log'
-##glo        git log oneline (Show the git log)
+##glo       git log oneline (Show the git log)
 alias glo='git log --pretty="oneline"'
-##glo        git log oneline (Show the git log)
+##glo       git log oneline (Show the git log)
 alias glol='git log --graph --oneline --decorate'
 ##gld       git log decorated (Show the git log but fancy)
 alias gld='git log --oneline --graph --decorate --left-right --boundary --date-order'
 ##glm       git log me (Show my commits in the git log)
 alias glm='git log --author="$(git config user.name)"'
-##glmc       git log me compact (Show my commits in the git log compact form)
+##glmc      git log me compact (Show my commits in the git log compact form)
 alias glmc='git log --pretty=oneline --author="$(git config user.name)"'
 alias glmc2='git log --pretty="[%Cblue%h%Creset]--[%cd]--[%cn] %s" --author="$(git config user.name)"'
 
@@ -181,4 +181,4 @@ gv() {
 
 ##
 ##gh        git help (Displays this message)
-alias ghelp='cat ~/.config/.git_aliases | grep \#\# | grep -v "alias gh" | sed "s/##//"'
+alias ghelp='cat $HOME/repos/me/gitmanager/.git_aliases | grep \#\# | grep -v "alias gh" | sed "s/##//"'
