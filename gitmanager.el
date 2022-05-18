@@ -21,7 +21,7 @@
 
 ;; BEGIN EXEC AGGREGATE
 
-(defun gitmanager-create-aggregate-output-buffer (outbuffer-name paths)
+(defun gitmanager-exec-create-aggregate-output-buffer (outbuffer-name paths)
   "OUTBUFFER-NAME PATHS."
   (with-current-buffer (get-buffer-create outbuffer-name)
     (erase-buffer)
@@ -66,7 +66,7 @@
 
 (defun gitmanager-exec-map-cmd-async (cmd paths buffname post-proc)
   "CMD PATHS BUFNAME POST-PROC."
-  (let* ((outbuffer (gitmanager-create-aggregate-output-buffer buffname paths)))
+  (let* ((outbuffer (gitmanager-exec-create-aggregate-output-buffer buffname paths)))
     (dolist (path paths)
       (gitmanager-exec-async cmd path outbuffer post-proc))
     outbuffer))
