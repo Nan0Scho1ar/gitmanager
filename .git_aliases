@@ -135,6 +135,8 @@ alias gmom='git merge origin/master'
 ##
 ##gpd       git pull down (git pull)
 alias gpd='git pull'
+##gpds       git pull down submodules (git pull)
+alias gpds='git pull --recurse-submodules'
 ##gpu       git push up (git push)
 alias gpu='git push'
 ##gpuf      git push up force (Force push)
