@@ -45,24 +45,25 @@
 (defface gitmanager-faces-state-dirty
   '((((class color) (min-colors 8))
      :foreground "red3"))
-  "Branch Clean Face."
+  "Branch Dirty Face."
   :group 'gitmanager-faces)
 
 (defface gitmanager-faces-state-out-of-sync
   '((((class color) (min-colors 8))
      :foreground "yellow3"))
-  "Branch Clean Face."
+  "Branch Out-Of-Sync Face."
   :group 'gitmanager-faces)
 
 (defface gitmanager-faces-state-conflicts
   '((((class color) (min-colors 8))
      :foreground "red3"))
-  "Branch Clean Face."
+  "Branch Conflicts Face."
   :group 'gitmanager-faces)
 
 (define-derived-mode gitmanager-mode
   fundamental-mode "Gitmanager"
   "Major mode for gitmanager.")
+
 
 ;; BEGIN EXEC AGGREGATE
 (defun gitmanager-exec-create-aggregate-output-buffer (outbuffer-name path-list)
