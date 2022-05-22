@@ -337,6 +337,24 @@ Selecting one of the repos in the gitmanager buffer will open it in magit."
 
 
 
+;; BEGIN Syncronous TODO rewrite async
+
+(defun gitmanager-exec (cmd path)
+  "CMD PATH."
+  (with-temp-buffer
+    (cd path)
+    (shell-command
+     cmd (current-buffer) gitmanager-error-buffer)
+    (buffer-string)))
+
+(defun gitmanager-repo-branch-name (path)
+  "Determine the name of the current branch for repo at PATH."
+  (s-replace-regexp "\n" ""
+                    (gitmanager-exec "git rev-parse --abbrev-ref HEAD" path)))
+
+;; END Synchronous
+
+
 ;; END gitmanager funcs
 
 
@@ -357,9 +375,6 @@ Selecting one of the repos in the gitmanager buffer will open it in magit."
 
 
 ;; TODO BRANCH NAME
-;; (defun gitmanager-repo-branch-name (path)
-;;   (s-replace-regexp "\n" ""
-;;                     (gitmanager-exec "git rev-parse --abbrev-ref HEAD" path)))
 
 
 ;;
@@ -381,13 +396,6 @@ Selecting one of the repos in the gitmanager buffer will open it in magit."
 
 
 
-;; (defun gitmanager-exec (cmd path)
-;;   "CMD PATH."
-;;   (with-temp-buffer
-;;     (cd path)
-;;     (shell-command
-;;      cmd (current-buffer) gitmanager-error-buffer)
-;;     (buffer-string)))
 
 ;; (defun gitmanager-wait-for-async-buffer (buffer)
 ;;   (let ((remaining t))
@@ -399,6 +407,11 @@ Selecting one of the repos in the gitmanager buffer will open it in magit."
 
 ;; (defun gitmanager-await-buffer-result (buffer)
 ;;   (gitmanager-async-apply #'gitmanager-wait-for-async-buffer (list buffer)))
+
+
+
+
+
 
 
 ;; begin loopvars (Unused)
