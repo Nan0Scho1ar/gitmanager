@@ -44,7 +44,7 @@
      'gitmanager-exec-sentinel)))
 
 (defun gitmanager-exec-sentinel (p e)
-  "P E."
+  "TODO P E."
   (let ((buffer (process-buffer p))
         (sent nil))
     (when (not (null buffer))
@@ -204,13 +204,38 @@ returns results buffer (needs to be awaited)"
 
 
 (defun gitmanager-state-async (paths)
-  (let ((buffname "* Gitmanager Repo Status Output *")
+  (let ((buffname "* Gitmanager *")
         (cmd "git status")
         (post-proc #'gitmanager-state-async-post-proc))
     (gitmanager-exec-map-cmd-async cmd paths buffname post-proc)))
 
 (defun gitmanager-state-async-post-proc (path event result)
-  (format "%S\n" (list path (gitmanager-repo-check-state result))))
+  (let* ((state (gitmanager-repo-check-state result))
+         (state-str (cond
+                     ((equal state 'clean)
+                      (concat
+                       (propertize "No Changes Found"
+                                   'face 'gitmanager-faces-state-clean)
+                       "  |  "))
+                     ((equal state 'dirty)
+                      (concat
+                       (propertize "Changes Detected"
+                                   'face 'gitmanager-faces-state-dirty)
+                       "  |  "))
+                     ((equal state 'out-of-sync)
+                      (concat
+                       (propertize "Out of Sync"
+                                   'face 'gitmanager-faces-state-out-of-sync)
+                       "       |  "))
+                     ((equal state 'merge-conflict)
+                      (concat
+                       (propertize "Merge Conflicts"
+                                   'face 'gitmanager-faces-state-conflicts)
+                       "   |  ")))))
+    (concat state-str (propertize (format "%s\n" path)
+                                  'face 'italic))))
+
+
 
 (defun gitmanager-fetch-async (paths)
   (let ((buffname "* Gitmanager Fetch Output *")
@@ -219,7 +244,10 @@ returns results buffer (needs to be awaited)"
     (gitmanager-exec-map-cmd-async cmd paths buffname post-proc)))
 
 (defun gitmanager-fetch-async-post-proc (path event result)
-  (format "%S\n" (list path (s-replace-regexp "\n$" "" event))))
+  (propertize
+   (format "%S\n" (list path (s-replace-regexp "\n$" "" event)))
+   'face 'italic))
+
 
 
 (defun gitmanager-fetch-and-state ()
@@ -229,6 +257,67 @@ returns results buffer (needs to be awaited)"
     (gitmanager-async-wait-for-buffer
      (gitmanager-state-async repos))))
 
+
+(defun gitmanager-run-magit (&rest _)
+  (interactive)
+  (magit-status
+   (cadr (split-string (buffer-substring
+                        (line-beginning-position)
+                        (line-end-position))
+                       "  |  "))))
+
+(defun gitmanager-hide (&rest _)
+  (interactive)
+  (switch-to-buffer gitmanager-previous-buffer))
+
+
+
+(defvar gitmanager-mode-map)
+(defvar gitmanager-previous-buffer nil)
+
+(defface gitmanager-faces-state-clean
+  '((((class color) (min-colors 8))
+     :background "green" :foreground "black"))
+  "Branch Clean Face."
+  :group 'gitmanager-faces)
+
+(defface gitmanager-faces-state-dirty
+  '((((class color) (min-colors 8))
+     :background "red" :foreground "white"))
+  "Branch Clean Face."
+  :group 'gitmanager-faces)
+
+(defface gitmanager-faces-state-out-of-sync
+  '((((class color) (min-colors 8))
+     :background "yellow" :foreground "black"))
+  "Branch Clean Face."
+  :group 'gitmanager-faces)
+
+(defface gitmanager-faces-state-conflicts
+  '((((class color) (min-colors 8))
+     :background "red" :foreground "white"))
+  "Branch Clean Face."
+  :group 'gitmanager-faces)
+
+(define-derived-mode gitmanager-mode
+  fundamental-mode "Gitmanager"
+  "Major mode for gitmanager."
+  (setq-local case-fold-search nil))
+
+(map! :mode gitmanager-mode :n "RET" #'gitmanager-run-magit)
+(map! :mode gitmanager-mode :n "q" #'gitmanager-hide)
+(map! :mode gitmanager-mode :n "r" #'gitmanager-fetch-and-state)
+
+
+(defun gitmanager ()
+  (interactive)
+    (with-current-buffer "* Gitmanager *"
+      (erase-buffer)
+      (sit-for 0))
+  (gitmanager-async-exec #'gitmanager-fetch-and-state)
+  (setq gitmanager-previous-buffer (current-buffer))
+  (switch-to-buffer "* Gitmanager *")
+  (gitmanager-mode))
 
 ;; END gitmanager funcs
 
@@ -244,7 +333,6 @@ returns results buffer (needs to be awaited)"
 
 ;; (gitmanager-fetch-async (gitmanager-get-repos))
 
-(gitmanager-async-exec #'gitmanager-fetch-and-state)
 
 ;; (message "%s" (with-current-buffer (gitmanager-state-async (gitmanager-get-repos)) completed))
 
