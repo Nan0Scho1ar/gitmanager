@@ -183,15 +183,15 @@ awaited without blocking the main thread."
                     t)))
 
 (defun gitmanager-async-wait-for-buffer-test (buffer fn args)
-  (if (null (with-current-buffer buffer (set-difference gitmanager-paths gitmanager-paths-completed)))
-      (with-current-buffer buffer
-        (apply fn args))
-    ;; Tell async parent loop process to retry
-    'gitmanager-loop-retry))
   "Test if BUFFER is finished, then apply FN ARGS.
 If it is not finished return retry symbol.
 Do not call this directly, instead use
 gitmanager-async-wait-for-buffer-then-apply"
+  (with-current-buffer buffer
+    (if (null (set-difference gitmanager-paths gitmanager-paths-completed))
+        (apply fn args)
+      ;; Tell async parent loop process to retry
+      'gitmanager-loop-retry)))
 
 
 ;; BEGIN gitmanager funcs
