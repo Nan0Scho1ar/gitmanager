@@ -82,16 +82,16 @@
       (format "%s %s" cmd path) (current-buffer) cmd)
      'gitmanager-exec-sentinel)))
 
-(defun gitmanager-exec-sentinel (p e)
-  "TODO P E."
-  (let ((buffer (process-buffer p))
+(defun gitmanager-exec-sentinel (process event)
+  "TODO describe PROCESS EVENT."
+  (let ((buffer (process-buffer process))
         (sent nil))
     (when (not (null buffer))
       (with-current-buffer buffer
-        (let ((output (apply post-process (list path e (buffer-string))))
+        (let ((output (apply post-process (list path event (buffer-string))))
               (path path))
-          (when (process-live-p p)
-            (kill-process p))
+          (when (process-live-p process)
+            (kill-process process))
           (with-current-buffer out-buffer
             (while (not sent)
               (unless buffer-lock
