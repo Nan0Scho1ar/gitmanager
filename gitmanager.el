@@ -155,16 +155,21 @@ returns results buffer (needs to be awaited)"
   (gitmanager-async-apply fn '()))
 
 
-(defun gitmanager-async-wait-for-buffer (buffer)
+(defun gitmanager-async-wait-for-buffer-then-apply (buffer fn args)
 (gitmanager-loop (gitmanager-create-async-eval-buffer
                   #'gitmanager-async-wait-for-buffer-test
-                  (list buffer) t)))
+                  (list buffer fn args)
+                  t)))
 
-(defun gitmanager-async-wait-for-buffer-test (buffer)
+(defun gitmanager-async-wait-for-buffer-test (buffer fn args)
   (if (null (with-current-buffer buffer (set-difference paths completed)))
-      (with-current-buffer buffer (buffer-string))
+      (with-current-buffer buffer
+        (message "Buffer: %S" buffer)
+        (message "fn: %S" fn)
+        (message "args: %S" args)
+        (apply fn args))
     ;; Tell parent loop process to retry
-    'git-manager-loop-retry))
+    'gitmanager-loop-retry))
 
 
 ;; BEGIN gitmanager funcs
@@ -200,6 +205,7 @@ returns results buffer (needs to be awaited)"
            :test (lambda (a b) (equal a b)))))
 
 
+;; State
 
 (defun gitmanager-state-async (paths)
   (let ((buffname "* Gitmanager *")
@@ -234,7 +240,7 @@ returns results buffer (needs to be awaited)"
                                   'face 'italic))))
 
 
-
+;; Fetch
 (defun gitmanager-fetch-async (paths)
   (let ((buffname "* Gitmanager Fetch Output *")
         (cmd "git fetch")
@@ -247,14 +253,30 @@ returns results buffer (needs to be awaited)"
    'face 'italic))
 
 
+(defun gitmanager-fetch-and-state-async (paths)
+  (let ((buffname "* Gitmanager *")
+        (cmd "git fetch >/dev/null && git status")
+        (post-proc #'gitmanager-state-async-post-proc))
+    (gitmanager-exec-map-cmd-async cmd paths buffname post-proc)))
+
 
 (defun gitmanager-fetch-and-state ()
   (interactive)
-  (let ((repos (gitmanager-get-repos)))
-    (gitmanager-async-wait-for-buffer
-     (gitmanager-fetch-async repos))
-    (gitmanager-async-wait-for-buffer
-     (gitmanager-state-async repos))))
+  (gitmanager-async-wait-for-buffer-then-apply
+   (gitmanager-fetch-and-state-async (gitmanager-get-repos))
+   (lambda () (sort-lines-in-buffer) (message "Done!"))
+   '()))
+
+(defun sort-lines-in-buffer ()
+  (sort-lines nil (point-min) (point-max)))
+
+;; (defun gitmanager-fetch-and-state ()
+;;   (interactive)
+;;   (let ((repos (gitmanager-get-repos)))
+;;     (gitmanager-async-wait-for-buffer
+;;      (gitmanager-fetch-async repos))
+;;     (gitmanager-async-wait-for-buffer
+;;      (gitmanager-state-async repos))))
 
 
 (defun gitmanager-run-magit (&rest _)
@@ -316,6 +338,7 @@ returns results buffer (needs to be awaited)"
   (gitmanager-async-exec #'gitmanager-fetch-and-state)
   (setq gitmanager-previous-buffer (current-buffer))
   (switch-to-buffer "* Gitmanager *")
+  (message "Fetching repos...")
   (gitmanager-mode))
 
 ;; END gitmanager funcs
