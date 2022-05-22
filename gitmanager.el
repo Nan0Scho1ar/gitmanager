@@ -169,8 +169,6 @@ returns results buffer (needs to be awaited)"
 
 ;; BEGIN gitmanager funcs
 
-(defvar gitmanager-status-buffer "* Gitmanager Status *")
-(defvar gitmanager-error-buffer "* Gitmanager Error *")
 (defvar gitmanager-cache-dir "/home/nan0scho1ar/.config/gitmanager/")
 
 (defun gitmanager-tree-is-clean-p (state)
