@@ -77,7 +77,7 @@
 
 
 (defun gitmanager-exec-async (cmd filepath output-buffer post-process-fn)
-  "CMD FILEPATH OUTPUT-BUFFER POST-PROCESS-FN."
+  "Run CMD for each FILEPATH and fill OUTPUT-BUFFER using POST-PROCESS-FN."
   (with-current-buffer (get-buffer-create (format "* %s %s*" filepath cmd))
     (erase-buffer)
     (setq gitmanager-path filepath
@@ -90,7 +90,7 @@
      'gitmanager-exec-sentinel)))
 
 (defun gitmanager-exec-sentinel (process event)
-  "TODO describe PROCESS EVENT."
+  "Execute when PROCESS triggers EVENT for further processing."
   (let ((buffer (process-buffer process))
         (sent nil))
     (when (not (null buffer))
@@ -111,7 +111,7 @@
           (kill-buffer buffer))))))
 
 (defun gitmanager-exec-map-cmd-async (cmd paths buffname post-proc)
-  "CMD PATHS BUFFNAME POST-PROC.
+  "Run CMD for each PATHS and fill BUFFNAME using POST-PROC.
 Asyncronosly run many commands and aggregate all the
 results into a single buffer.
 returns results buffer (needs to be awaited)"
@@ -138,12 +138,12 @@ returns results buffer (needs to be awaited)"
 ;; BEGIN MAIN LOOP
 
 (defun gitmanager-loop (buffer)
-  "BUFFER."
+  "Loop until gitmanager-async-eval-fn in BUFFER is completed."
   (let ((process (start-process-shell-command "gitmanager-async-handler" buffer "sleep 1")))
     (set-process-sentinel process 'gitmanager-loop-sentinel)))
 
 (defun gitmanager-loop-sentinel (process _)
-  "PROCESS EVENT."
+  "Execute when PROCESS triggers EVENT for further processing."
   (let ((buffer (process-buffer process)))
     (when (not (null buffer))
       (with-current-buffer buffer
@@ -167,17 +167,15 @@ returns results buffer (needs to be awaited)"
 
 
 ;; async await
-(defun gitmanager-async-apply (fn args)
-  "FN ARGS."
+(defun gitmanager-async-apply (fn &optional args)
+  "Asyncronously apply FN ARGS.
+This is useful for calling other async functions which must be
+awaited without blocking the main thread."
+  (unless args (setq args '()))
   (gitmanager-loop (gitmanager-loop-create-buffer fn args nil)))
 
-(defun gitmanager-async-exec (fn)
-  "FN."
-  (gitmanager-async-apply fn '()))
-
-
 (defun gitmanager-async-wait-for-buffer-then-apply (buffer fn &optional args)
-  "BUFFER FN ARGS."
+  "Await BUFFER, then apply FN ARGS."
   (unless args (setq args '()))
   (gitmanager-loop (gitmanager-loop-create-buffer
                     #'gitmanager-async-wait-for-buffer-test
@@ -318,23 +316,29 @@ returns results buffer (needs to be awaited)"
     (magit-status path)))
 
 (defun gitmanager-hide (&rest _)
-  "."
+  "Restore the previous buffer from before you opened Gitmanager."
   (interactive)
   (switch-to-buffer gitmanager-previous-buffer))
 
 
 
 (defun gitmanager ()
-  "."
+  "Run gitmanager.
+Fetches repos, determines their status, then opens the Gitmanager buffer.
+Runs in the background until all processes have completed.
+Selecting one of the repos in the gitmanager buffer will open it in magit."
   (interactive)
   (with-current-buffer (get-buffer-create "* Gitmanager *")
-      (erase-buffer)
-      (sit-for 0))
-  (gitmanager-async-exec #'gitmanager-fetch-and-state)
-  (setq gitmanager-previous-buffer (current-buffer))
-  (message "Fetching repos..."))
+    (erase-buffer)
+    (sit-for 0))
+  (gitmanager-async-apply #'gitmanager-fetch-and-state)
+  (setq gitmanager-previous-buffer (current-buffer)))
+  (message "Fetching repos...")
+
+
 
 ;; END gitmanager funcs
+
 
 ;; Testing
 ;; (gitmanager-async-apply
