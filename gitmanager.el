@@ -249,6 +249,7 @@ returns results buffer (needs to be awaited)"
 
 
 (defun gitmanager-fetch-and-state ()
+  (interactive)
   (let ((repos (gitmanager-get-repos)))
     (gitmanager-async-wait-for-buffer
      (gitmanager-fetch-async repos))
