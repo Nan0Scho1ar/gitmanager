@@ -104,8 +104,9 @@
           (kill-buffer buffer))))))
 
 (defun gitmanager-exec-map-cmd-async (cmd paths buffname post-proc)
-  "CMD PATHS BUFNAME POST-PROC.
-Asyncronosly run many commands and aggregate all the results into a single buffer.
+  "CMD PATHS BUFFNAME POST-PROC.
+Asyncronosly run many commands and aggregate all the
+results into a single buffer.
 returns results buffer (needs to be awaited)"
   (let* ((outbuffer (gitmanager-exec-create-aggregate-output-buffer buffname paths)))
     (dolist (path paths)
@@ -119,6 +120,7 @@ returns results buffer (needs to be awaited)"
 ;; MAIN LOOP BUFFER
 
 (defun gitmanager-loop-create-buffer (fn args loop)
+  "FN ARGS LOOP."
   (let ((buffer (generate-new-buffer "* GitManager Async Eval *" )))
     (with-current-buffer buffer
       (set (make-local-variable 'async-eval-fn) fn)
@@ -130,10 +132,12 @@ returns results buffer (needs to be awaited)"
 ;; BEGIN MAIN LOOP
 
 (defun gitmanager-loop (buffer)
+  "BUFFER."
   (let ((process (start-process-shell-command "gitmanager-async-handler" buffer "sleep 1")))
     (set-process-sentinel process 'gitmanager-loop-sentinel)))
 
 (defun gitmanager-loop-sentinel (process event)
+  "PROCESS EVENT."
   (let ((buffer (process-buffer process)))
     (when (not (null buffer))
       (with-current-buffer buffer
@@ -158,13 +162,16 @@ returns results buffer (needs to be awaited)"
 
 ;; async await
 (defun gitmanager-async-apply (fn args)
+  "FN ARGS."
   (gitmanager-loop (gitmanager-loop-create-buffer fn args nil)))
 
 (defun gitmanager-async-exec (fn)
+  "FN."
   (gitmanager-async-apply fn '()))
 
 
 (defun gitmanager-async-wait-for-buffer-then-apply (buffer fn &optional args)
+  "BUFFER FN ARGS."
   (unless args (setq args '()))
   (gitmanager-loop (gitmanager-loop-create-buffer
                     #'gitmanager-async-wait-for-buffer-test
@@ -172,6 +179,7 @@ returns results buffer (needs to be awaited)"
                     t)))
 
 (defun gitmanager-async-wait-for-buffer-test (buffer fn args)
+  "BUFFER FN ARGS."
   (if (null (with-current-buffer buffer (set-difference paths completed)))
       (with-current-buffer buffer
         (apply fn args))
@@ -181,24 +189,29 @@ returns results buffer (needs to be awaited)"
 
 ;; BEGIN gitmanager funcs
 
-(defun gitmanager-tree-is-clean-p (state)
-  (string-search "nothing to commit, working tree clean" state))
+(defun gitmanager-tree-is-clean-p (status)
+  "STATUS."
+  (string-search "nothing to commit, working tree clean" status))
 
-(defun gitmanager-branch-up-to-date-p (state)
-  (string-search "Your branch is up to date" state))
+(defun gitmanager-branch-up-to-date-p (status)
+  "STATUS."
+  (string-search "Your branch is up to date" status))
 
-(defun gitmanager-has-conflicts-p (state)
-  (or (string-search "both added" state)
-      (string-search "both modified" state)))
+(defun gitmanager-has-conflicts-p (status)
+  "STATUS."
+  (or (string-search "both added" status)
+      (string-search "both modified" status)))
 
-(defun gitmanager-repo-check-state (state)
-  (cond ((and (gitmanager-tree-is-clean-p state)
-              (gitmanager-branch-up-to-date-p state)) 'clean)
-        ((gitmanager-tree-is-clean-p state) 'out-of-sync)
-        ((gitmanager-has-conflicts-p state) 'merge-conflict)
+(defun gitmanager-repo-check-state (status)
+  "STATUS."
+  (cond ((and (gitmanager-tree-is-clean-p status)
+              (gitmanager-branch-up-to-date-p status)) 'clean)
+        ((gitmanager-tree-is-clean-p status) 'out-of-sync)
+        ((gitmanager-has-conflicts-p status) 'merge-conflict)
         (t 'dirty)))
 
 (defun gitmanager-get-repos ()
+  "."
   (mapcar (lambda (x) (s-replace-regexp "\.git$" "" x))
           (set-difference
            (with-temp-buffer
@@ -213,12 +226,14 @@ returns results buffer (needs to be awaited)"
 ;; State
 
 (defun gitmanager-state-async (paths)
+  "PATHS."
   (let ((buffname "* Gitmanager *")
         (cmd "git status")
         (post-proc #'gitmanager-state-async-post-proc))
     (gitmanager-exec-map-cmd-async cmd paths buffname post-proc)))
 
-(defun gitmanager-state-async-post-proc (path event result)
+(defun gitmanager-state-async-post-proc (path _ result)
+  "PATH EVENT RESULT."
   (let* ((state (gitmanager-repo-check-state result))
          (state-str (cond
                      ((equal state 'clean)
@@ -247,18 +262,21 @@ returns results buffer (needs to be awaited)"
 
 ;; Fetch
 (defun gitmanager-fetch-async (paths)
+  "PATHS."
   (let ((buffname "* Gitmanager Fetch Output *")
         (cmd "git fetch")
         (post-proc #'gitmanager-fetch-async-post-proc))
     (gitmanager-exec-map-cmd-async cmd paths buffname post-proc)))
 
-(defun gitmanager-fetch-async-post-proc (path event result)
+(defun gitmanager-fetch-async-post-proc (path event _)
+  "PATH EVENT RESULT."
   (propertize
    (format "%S\n" (list path (s-replace-regexp "\n$" "" event)))
    'face 'italic))
 
 
 (defun gitmanager-fetch-and-state-async (paths)
+  "PATHS."
   (let ((buffname "* Gitmanager *")
         (cmd "git fetch >/dev/null && git status")
         (post-proc #'gitmanager-state-async-post-proc))
@@ -266,22 +284,25 @@ returns results buffer (needs to be awaited)"
 
 
 (defun gitmanager-fetch-and-state ()
+  "."
   (interactive)
   (message "Fetching repos...")
   (gitmanager-async-wait-for-buffer-then-apply
    (gitmanager-fetch-and-state-async (gitmanager-get-repos))
    (lambda ()
-     (sort-lines-in-buffer)
+     (gitmanager-sort-lines-in-buffer)
      (message "Done!")
      (switch-to-buffer "* Gitmanager *")
      (gitmanager-mode))))
 
-(defun sort-lines-in-buffer ()
+(defun gitmanager-sort-lines-in-buffer ()
+  "."
   (sort-lines t (point-min) (point-max)))
 
 
 
 (defun gitmanager-run-magit (&rest _)
+  "."
   (interactive)
   (let ((path (cadr (split-string
                      (buffer-substring
@@ -291,12 +312,14 @@ returns results buffer (needs to be awaited)"
     (magit-status path)))
 
 (defun gitmanager-hide (&rest _)
+  "."
   (interactive)
   (switch-to-buffer gitmanager-previous-buffer))
 
 
 
 (defun gitmanager ()
+  "."
   (interactive)
   (with-current-buffer (get-buffer-create "* Gitmanager *")
       (erase-buffer)
