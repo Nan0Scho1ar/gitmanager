@@ -53,11 +53,6 @@
   fundamental-mode "Gitmanager"
   "Major mode for gitmanager.")
 
-(map! :mode gitmanager-mode :n "RET" #'gitmanager-run-magit)
-(map! :mode gitmanager-mode :n "q" #'gitmanager-hide)
-(map! :mode gitmanager-mode :n "r" #'gitmanager-fetch-and-state)
-
-
 ;; BEGIN EXEC AGGREGATE
 
 (defun gitmanager-exec-create-aggregate-output-buffer (outbuffer-name paths)
