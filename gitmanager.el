@@ -194,20 +194,20 @@ awaited without blocking the main thread."
 ;; BEGIN gitmanager funcs
 
 (defun gitmanager-tree-is-clean-p (status)
-  "STATUS."
+  "Check git STATUS string to see if working tree is clean."
   (string-search "nothing to commit, working tree clean" status))
 
 (defun gitmanager-branch-up-to-date-p (status)
-  "STATUS."
+  "Check git STATUS string to see if repo is up to date."
   (string-search "Your branch is up to date" status))
 
 (defun gitmanager-has-conflicts-p (status)
-  "STATUS."
+  "Check git STATUS string to see if repo has conflicts."
   (or (string-search "both added" status)
       (string-search "both modified" status)))
 
 (defun gitmanager-repo-check-state (status)
-  "STATUS."
+  "Check git STATUS string to determine the state of the repo."
   (cond ((and (gitmanager-tree-is-clean-p status)
               (gitmanager-branch-up-to-date-p status)) 'clean)
         ((gitmanager-tree-is-clean-p status) 'out-of-sync)
@@ -215,7 +215,7 @@ awaited without blocking the main thread."
         (t 'dirty)))
 
 (defun gitmanager-get-repos ()
-  "."
+  "Fetch a list of paths for git repos."
   (mapcar (lambda (x) (s-replace-regexp "\.git$" "" x))
           (set-difference
            (with-temp-buffer
@@ -230,14 +230,14 @@ awaited without blocking the main thread."
 ;; State
 
 (defun gitmanager-state-async (paths)
-  "PATHS."
+  "Asyncronously determine the state of each repo in PATHS."
   (let ((buffname "* Gitmanager *")
         (cmd "git status")
         (post-proc #'gitmanager-state-async-post-proc))
     (gitmanager-exec-map-cmd-async cmd paths buffname post-proc)))
 
 (defun gitmanager-state-async-post-proc (path _ result)
-  "PATH EVENT RESULT."
+  "Format the PATH and RESULT state for a git repo."
   (let* ((state (gitmanager-repo-check-state result))
          (state-str (cond
                      ((equal state 'clean)
@@ -266,21 +266,21 @@ awaited without blocking the main thread."
 
 ;; Fetch
 (defun gitmanager-fetch-async (paths)
-  "PATHS."
+  "Asyncronously fetch each repo in PATHS."
   (let ((buffname "* Gitmanager Fetch Output *")
         (cmd "git fetch")
         (post-proc #'gitmanager-fetch-async-post-proc))
     (gitmanager-exec-map-cmd-async cmd paths buffname post-proc)))
 
 (defun gitmanager-fetch-async-post-proc (path event _)
-  "PATH EVENT RESULT."
+  "Format the PATH and EVENT for each fetched git repo."
   (propertize
    (format "%S\n" (list path (s-replace-regexp "\n$" "" event)))
    'face 'italic))
 
 
 (defun gitmanager-fetch-and-state-async (paths)
-  "PATHS."
+  "Asyncronously fetch then determine the state of each repo in PATHS."
   (let ((buffname "* Gitmanager *")
         (cmd "git fetch >/dev/null && git status")
         (post-proc #'gitmanager-state-async-post-proc))
@@ -288,7 +288,8 @@ awaited without blocking the main thread."
 
 
 (defun gitmanager-fetch-and-state ()
-  "."
+  "Asyncronously fetch then determine the state of each repo in PATHS.
+Interactive, will display information and switch to output buffer once complete."
   (interactive)
   (message "Fetching repos...")
   (gitmanager-async-wait-for-buffer-then-apply
@@ -300,13 +301,13 @@ awaited without blocking the main thread."
      (gitmanager-mode))))
 
 (defun gitmanager-sort-lines-in-buffer ()
-  "."
+  "Sort the lines in a buffer in decending order."
   (sort-lines t (point-min) (point-max)))
 
 
 
 (defun gitmanager-run-magit (&rest _)
-  "."
+  "Run magit on the path for the currently selected line in Gitmanager."
   (interactive)
   (let ((path (cadr (split-string
                      (buffer-substring
