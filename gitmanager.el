@@ -277,25 +277,25 @@ returns results buffer (needs to be awaited)"
 
 (defface gitmanager-faces-state-clean
   '((((class color) (min-colors 8))
-     :background "green3" :foreground "black"))
+     :foreground "green3"))
   "Branch Clean Face."
   :group 'gitmanager-faces)
 
 (defface gitmanager-faces-state-dirty
   '((((class color) (min-colors 8))
-     :background "red3" :foreground "white"))
+     :foreground "red3"))
   "Branch Clean Face."
   :group 'gitmanager-faces)
 
 (defface gitmanager-faces-state-out-of-sync
   '((((class color) (min-colors 8))
-     :background "yellow3" :foreground "black"))
+     :foreground "yellow3"))
   "Branch Clean Face."
   :group 'gitmanager-faces)
 
 (defface gitmanager-faces-state-conflicts
   '((((class color) (min-colors 8))
-     :background "red3" :foreground "white"))
+     :foreground "red3"))
   "Branch Clean Face."
   :group 'gitmanager-faces)
 
