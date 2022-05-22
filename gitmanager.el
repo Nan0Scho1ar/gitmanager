@@ -1,4 +1,4 @@
-;;; gitmanager.el --- Manage multiple git repositories from within emacs -*- lexical-binding: t; -*-
+;;; gitmanager.el --- Manage multiple git repositories with magit -*- lexical-binding: t; -*-
 ;;
 ;; Copyright (C) 2022 Nan0Scho1ar
 ;;
@@ -9,12 +9,13 @@
 ;; Version: 0.0.1
 ;; Keywords: abbrev bib c calendar comm convenience data docs emulations extensions faces files frames games hardware help hypermedia i18n internal languages lisp local maint mail matching mouse multimedia news outlines processes terminals tex tools unix vc wp
 ;; Homepage: https://github.com/nan0scho1ar/gitmanager
-;; Package-Requires: ((emacs "28.1"))
+;; Package-Requires: ((emacs "27.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; Commentary:
-;;
+;; Emacs version of the gitmanager tool
+;; Includes integration with magit.
 ;;
 ;;
 ;;; Code:
@@ -50,8 +51,7 @@
 
 (define-derived-mode gitmanager-mode
   fundamental-mode "Gitmanager"
-  "Major mode for gitmanager."
-  (setq-local case-fold-search nil))
+  "Major mode for gitmanager.")
 
 (map! :mode gitmanager-mode :n "RET" #'gitmanager-run-magit)
 (map! :mode gitmanager-mode :n "q" #'gitmanager-hide)
@@ -136,7 +136,7 @@ returns results buffer (needs to be awaited)"
   (let ((process (start-process-shell-command "gitmanager-async-handler" buffer "sleep 1")))
     (set-process-sentinel process 'gitmanager-loop-sentinel)))
 
-(defun gitmanager-loop-sentinel (process event)
+(defun gitmanager-loop-sentinel (process _)
   "PROCESS EVENT."
   (let ((buffer (process-buffer process)))
     (when (not (null buffer))
