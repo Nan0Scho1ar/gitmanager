@@ -21,22 +21,20 @@
 ;;; Code:
 (require 'magit)
 
-(defvar gitmanager-cache-dir "/home/nan0scho1ar/.config/gitmanager/")
-
 (defvar gitmanager-mode-map)
 (defvar gitmanager-previous-buffer nil)
+(defvar gitmanager-cache-dir "/home/nan0scho1ar/.config/gitmanager/")
 
 (defvar-local gitmanager-async-eval-fn nil)
 (defvar-local gitmanager-async-eval-args nil)
 (defvar-local gitmanager-should-loop nil)
 (defvar-local gitmanager-should-exit nil)
 (defvar-local gitmanager-buffer-lock nil)
+(defvar-local gitmanager-path nil)
 (defvar-local gitmanager-paths nil)
 (defvar-local gitmanager-paths-completed nil)
-(defvar-local gitmanager-path nil)
 (defvar-local gitmanager-out-buffer nil)
 (defvar-local gitmanager-post-process nil)
-
 
 (defface gitmanager-faces-state-clean
   '((((class color) (min-colors 8))
