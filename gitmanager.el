@@ -155,11 +155,12 @@ returns results buffer (needs to be awaited)"
   (gitmanager-async-apply fn '()))
 
 
-(defun gitmanager-async-wait-for-buffer-then-apply (buffer fn args)
-(gitmanager-loop (gitmanager-create-async-eval-buffer
-                  #'gitmanager-async-wait-for-buffer-test
-                  (list buffer fn args)
-                  t)))
+(defun gitmanager-async-wait-for-buffer-then-apply (buffer fn &optional args)
+  (unless args (setq args '()))
+  (gitmanager-loop (gitmanager-create-async-eval-buffer
+                    #'gitmanager-async-wait-for-buffer-test
+                    (list buffer fn args)
+                    t)))
 
 (defun gitmanager-async-wait-for-buffer-test (buffer fn args)
   (if (null (with-current-buffer buffer (set-difference paths completed)))
@@ -264,8 +265,7 @@ returns results buffer (needs to be awaited)"
   (interactive)
   (gitmanager-async-wait-for-buffer-then-apply
    (gitmanager-fetch-and-state-async (gitmanager-get-repos))
-   (lambda () (sort-lines-in-buffer) (message "Done!"))
-   '()))
+   (lambda () (sort-lines-in-buffer) (message "Done!"))))
 
 (defun sort-lines-in-buffer ()
   (sort-lines nil (point-min) (point-max)))
