@@ -19,6 +19,45 @@
 ;;
 ;;; Code:
 
+(defvar gitmanager-cache-dir "/home/nan0scho1ar/.config/gitmanager/")
+
+(defvar gitmanager-mode-map)
+(defvar gitmanager-previous-buffer nil)
+
+(defface gitmanager-faces-state-clean
+  '((((class color) (min-colors 8))
+     :foreground "green3"))
+  "Branch Clean Face."
+  :group 'gitmanager-faces)
+
+(defface gitmanager-faces-state-dirty
+  '((((class color) (min-colors 8))
+     :foreground "red3"))
+  "Branch Clean Face."
+  :group 'gitmanager-faces)
+
+(defface gitmanager-faces-state-out-of-sync
+  '((((class color) (min-colors 8))
+     :foreground "yellow3"))
+  "Branch Clean Face."
+  :group 'gitmanager-faces)
+
+(defface gitmanager-faces-state-conflicts
+  '((((class color) (min-colors 8))
+     :foreground "red3"))
+  "Branch Clean Face."
+  :group 'gitmanager-faces)
+
+(define-derived-mode gitmanager-mode
+  fundamental-mode "Gitmanager"
+  "Major mode for gitmanager."
+  (setq-local case-fold-search nil))
+
+(map! :mode gitmanager-mode :n "RET" #'gitmanager-run-magit)
+(map! :mode gitmanager-mode :n "q" #'gitmanager-hide)
+(map! :mode gitmanager-mode :n "r" #'gitmanager-fetch-and-state)
+
+
 ;; BEGIN EXEC AGGREGATE
 
 (defun gitmanager-exec-create-aggregate-output-buffer (outbuffer-name paths)
@@ -116,36 +155,6 @@ returns results buffer (needs to be awaited)"
 ;; END MAIN LOOP
 
 
-;; begin loopvars (Unused)
-
-;; (setq gitmanager-loop-buffer-name "* GitManager Loop *")
-
-;; (defun gitmanager-create-loop-buffer ()
-;;   (let ((buffer (get-buffer-create gitmanager-loop-buffer-name)))
-;;     (with-current-buffer buffer
-;;       (set (make-local-variable 'async-eval-fn) nil)
-;;       (set (make-local-variable 'async-eval-args) nil)
-;;       (set (make-local-variable 'loop) nil)
-;;       (set (make-local-variable 'should-exit) nil))
-;;     buffer))
-
-;; (defun gitmanager-loop-make-local-variable (symbol value)
-;;   (with-current-buffer gitmanager-loop-buffer
-;;     (set (make-local-variable symbol) value)))
-
-;; (defun gitmanager-loop-apply-fn (fn args)
-;;   (gitmanager-loop-make-local-variable 'async-eval-fn fn)
-;;   (gitmanager-loop-make-local-variable 'async-eval-args args))
-
-;; (defun gitmanager-loop-stop ()
-;;   (gitmanager-loop-make-local-variable 'should-exit t))
-
-;; (defun gitmanager-loop-start ()
-;;   (setq gitmanager-loop-buffer (gitmanager-create-loop-buffer))
-;;   (gitmanager-loop gitmanager-loop-buffer))
-
-;; end loopvars (Unused)
-
 
 ;; async await
 (defun gitmanager-async-apply (fn args)
@@ -165,17 +174,12 @@ returns results buffer (needs to be awaited)"
 (defun gitmanager-async-wait-for-buffer-test (buffer fn args)
   (if (null (with-current-buffer buffer (set-difference paths completed)))
       (with-current-buffer buffer
-        (message "Buffer: %S" buffer)
-        (message "fn: %S" fn)
-        (message "args: %S" args)
         (apply fn args))
-    ;; Tell parent loop process to retry
+    ;; Tell async parent loop process to retry
     'gitmanager-loop-retry))
 
 
 ;; BEGIN gitmanager funcs
-
-(defvar gitmanager-cache-dir "/home/nan0scho1ar/.config/gitmanager/")
 
 (defun gitmanager-tree-is-clean-p (state)
   (string-search "nothing to commit, working tree clean" state))
@@ -275,13 +279,6 @@ returns results buffer (needs to be awaited)"
 (defun sort-lines-in-buffer ()
   (sort-lines t (point-min) (point-max)))
 
-;; (defun gitmanager-fetch-and-state ()
-;;   (interactive)
-;;   (let ((repos (gitmanager-get-repos)))
-;;     (gitmanager-async-wait-for-buffer
-;;      (gitmanager-fetch-async repos))
-;;     (gitmanager-async-wait-for-buffer
-;;      (gitmanager-state-async repos))))
 
 
 (defun gitmanager-run-magit (&rest _)
@@ -297,43 +294,6 @@ returns results buffer (needs to be awaited)"
   (interactive)
   (switch-to-buffer gitmanager-previous-buffer))
 
-
-
-(defvar gitmanager-mode-map)
-(defvar gitmanager-previous-buffer nil)
-
-(defface gitmanager-faces-state-clean
-  '((((class color) (min-colors 8))
-     :foreground "green3"))
-  "Branch Clean Face."
-  :group 'gitmanager-faces)
-
-(defface gitmanager-faces-state-dirty
-  '((((class color) (min-colors 8))
-     :foreground "red3"))
-  "Branch Clean Face."
-  :group 'gitmanager-faces)
-
-(defface gitmanager-faces-state-out-of-sync
-  '((((class color) (min-colors 8))
-     :foreground "yellow3"))
-  "Branch Clean Face."
-  :group 'gitmanager-faces)
-
-(defface gitmanager-faces-state-conflicts
-  '((((class color) (min-colors 8))
-     :foreground "red3"))
-  "Branch Clean Face."
-  :group 'gitmanager-faces)
-
-(define-derived-mode gitmanager-mode
-  fundamental-mode "Gitmanager"
-  "Major mode for gitmanager."
-  (setq-local case-fold-search nil))
-
-(map! :mode gitmanager-mode :n "RET" #'gitmanager-run-magit)
-(map! :mode gitmanager-mode :n "q" #'gitmanager-hide)
-(map! :mode gitmanager-mode :n "r" #'gitmanager-fetch-and-state)
 
 
 (defun gitmanager ()
@@ -407,6 +367,36 @@ returns results buffer (needs to be awaited)"
 ;; (defun gitmanager-await-buffer-result (buffer)
 ;;   (gitmanager-async-apply #'gitmanager-wait-for-async-buffer (list buffer)))
 
+
+;; begin loopvars (Unused)
+
+;; (setq gitmanager-loop-buffer-name "* GitManager Loop *")
+
+;; (defun gitmanager-create-loop-buffer ()
+;;   (let ((buffer (get-buffer-create gitmanager-loop-buffer-name)))
+;;     (with-current-buffer buffer
+;;       (set (make-local-variable 'async-eval-fn) nil)
+;;       (set (make-local-variable 'async-eval-args) nil)
+;;       (set (make-local-variable 'loop) nil)
+;;       (set (make-local-variable 'should-exit) nil))
+;;     buffer))
+
+;; (defun gitmanager-loop-make-local-variable (symbol value)
+;;   (with-current-buffer gitmanager-loop-buffer
+;;     (set (make-local-variable symbol) value)))
+
+;; (defun gitmanager-loop-apply-fn (fn args)
+;;   (gitmanager-loop-make-local-variable 'async-eval-fn fn)
+;;   (gitmanager-loop-make-local-variable 'async-eval-args args))
+
+;; (defun gitmanager-loop-stop ()
+;;   (gitmanager-loop-make-local-variable 'should-exit t))
+
+;; (defun gitmanager-loop-start ()
+;;   (setq gitmanager-loop-buffer (gitmanager-create-loop-buffer))
+;;   (gitmanager-loop gitmanager-loop-buffer))
+
+;; end loopvars (Unused)
 
 (provide 'gitmanager)
 ;;; gitmanager.el ends here
