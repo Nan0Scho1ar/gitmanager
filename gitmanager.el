@@ -277,25 +277,25 @@ returns results buffer (needs to be awaited)"
 
 (defface gitmanager-faces-state-clean
   '((((class color) (min-colors 8))
-     :background "green" :foreground "black"))
+     :background "green3" :foreground "black"))
   "Branch Clean Face."
   :group 'gitmanager-faces)
 
 (defface gitmanager-faces-state-dirty
   '((((class color) (min-colors 8))
-     :background "red" :foreground "white"))
+     :background "red3" :foreground "white"))
   "Branch Clean Face."
   :group 'gitmanager-faces)
 
 (defface gitmanager-faces-state-out-of-sync
   '((((class color) (min-colors 8))
-     :background "yellow" :foreground "black"))
+     :background "yellow3" :foreground "black"))
   "Branch Clean Face."
   :group 'gitmanager-faces)
 
 (defface gitmanager-faces-state-conflicts
   '((((class color) (min-colors 8))
-     :background "red" :foreground "white"))
+     :background "red3" :foreground "white"))
   "Branch Clean Face."
   :group 'gitmanager-faces)
 
@@ -311,7 +311,7 @@ returns results buffer (needs to be awaited)"
 
 (defun gitmanager ()
   (interactive)
-    (with-current-buffer "* Gitmanager *"
+  (with-current-buffer (get-buffer-create "* Gitmanager *")
       (erase-buffer)
       (sit-for 0))
   (gitmanager-async-exec #'gitmanager-fetch-and-state)
