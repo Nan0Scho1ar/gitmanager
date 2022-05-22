@@ -118,7 +118,7 @@ returns results buffer (needs to be awaited)"
 
 ;; MAIN LOOP BUFFER
 
-(defun gitmanager-create-async-eval-buffer (fn args loop)
+(defun gitmanager-loop-create-buffer (fn args loop)
   (let ((buffer (generate-new-buffer "* GitManager Async Eval *" )))
     (with-current-buffer buffer
       (set (make-local-variable 'async-eval-fn) fn)
@@ -158,7 +158,7 @@ returns results buffer (needs to be awaited)"
 
 ;; async await
 (defun gitmanager-async-apply (fn args)
-  (gitmanager-loop (gitmanager-create-async-eval-buffer fn args nil)))
+  (gitmanager-loop (gitmanager-loop-create-buffer fn args nil)))
 
 (defun gitmanager-async-exec (fn)
   (gitmanager-async-apply fn '()))
@@ -166,7 +166,7 @@ returns results buffer (needs to be awaited)"
 
 (defun gitmanager-async-wait-for-buffer-then-apply (buffer fn &optional args)
   (unless args (setq args '()))
-  (gitmanager-loop (gitmanager-create-async-eval-buffer
+  (gitmanager-loop (gitmanager-loop-create-buffer
                     #'gitmanager-async-wait-for-buffer-test
                     (list buffer fn args)
                     t)))
