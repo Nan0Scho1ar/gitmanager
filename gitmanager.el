@@ -19,11 +19,24 @@
 ;;
 ;;
 ;;; Code:
+(require 'magit)
 
 (defvar gitmanager-cache-dir "/home/nan0scho1ar/.config/gitmanager/")
 
 (defvar gitmanager-mode-map)
 (defvar gitmanager-previous-buffer nil)
+
+(defvar-local gitmanager-async-eval-fn nil)
+(defvar-local gitmanager-async-eval-args nil)
+(defvar-local gitmanager-should-loop nil)
+(defvar-local gitmanager-should-exit nil)
+(defvar-local gitmanager-buffer-lock nil)
+(defvar-local gitmanager-paths nil)
+(defvar-local gitmanager-paths-completed nil)
+(defvar-local gitmanager-path nil)
+(defvar-local gitmanager-out-buffer nil)
+(defvar-local gitmanager-post-process nil)
+
 
 (defface gitmanager-faces-state-clean
   '((((class color) (min-colors 8))
@@ -54,27 +67,27 @@
   "Major mode for gitmanager.")
 
 ;; BEGIN EXEC AGGREGATE
-
-(defun gitmanager-exec-create-aggregate-output-buffer (outbuffer-name paths)
-  "OUTBUFFER-NAME PATHS."
+(defun gitmanager-exec-create-aggregate-output-buffer (outbuffer-name path-list)
+  "OUTBUFFER-NAME PATH-LIST."
   (with-current-buffer (get-buffer-create outbuffer-name)
     (erase-buffer)
-    (set (make-local-variable 'buffer-lock) nil)
-    (set (make-local-variable 'paths) paths)
-    (set (make-local-variable 'completed) '())
+    (setq gitmanager-buffer-lock     nil
+          gitmanager-paths           path-list
+          gitmanager-paths-completed '())
     (current-buffer)))
 
-(defun gitmanager-exec-async (cmd path out-buffer post-process)
-  "CMD PATH OUT-BUFFER POST-PROCESS."
-  (with-current-buffer (get-buffer-create (format "* %s %s*" path cmd))
+
+(defun gitmanager-exec-async (cmd filepath output-buffer post-process-fn)
+  "CMD FILEPATH OUTPUT-BUFFER POST-PROCESS-FN."
+  (with-current-buffer (get-buffer-create (format "* %s %s*" filepath cmd))
     (erase-buffer)
-    (set (make-local-variable 'path) path)
-    (set (make-local-variable 'out-buffer) out-buffer)
-    (set (make-local-variable 'post-process) post-process)
-    (set (make-local-variable 'default-directory) path)
+    (setq gitmanager-path filepath
+          gitmanager-out-buffer output-buffer
+          gitmanager-post-process post-process-fn
+          default-directory gitmanager-path)
     (set-process-sentinel
      (start-process-shell-command
-      (format "%s %s" cmd path) (current-buffer) cmd)
+      (format "%s %s" cmd gitmanager-path) (current-buffer) cmd)
      'gitmanager-exec-sentinel)))
 
 (defun gitmanager-exec-sentinel (process event)
@@ -83,19 +96,19 @@
         (sent nil))
     (when (not (null buffer))
       (with-current-buffer buffer
-        (let ((output (apply post-process (list path event (buffer-string))))
-              (path path))
+        (let ((output (apply gitmanager-post-process (list gitmanager-path event (buffer-string))))
+              (path gitmanager-path))
           (when (process-live-p process)
             (kill-process process))
-          (with-current-buffer out-buffer
+          (with-current-buffer gitmanager-out-buffer
             (while (not sent)
-              (unless buffer-lock
-                (set 'buffer-lock buffer)
-                (when (equal buffer-lock buffer)
+              (unless gitmanager-buffer-lock
+                (setq gitmanager-buffer-lock buffer)
+                (when (equal gitmanager-buffer-lock buffer)
                   (insert output)
-                  (setq completed (cons path completed))
-                  (setq buffer-lock nil)
-                  (setq sent t)))))
+                  (setq gitmanager-paths-completed (cons path gitmanager-paths-completed)
+                        gitmanager-buffer-lock nil
+                        sent t)))))
           (kill-buffer buffer))))))
 
 (defun gitmanager-exec-map-cmd-async (cmd paths buffname post-proc)
@@ -111,17 +124,16 @@ returns results buffer (needs to be awaited)"
 ;; END EXEC AGGREGATE
 
 
-
 ;; MAIN LOOP BUFFER
 
-(defun gitmanager-loop-create-buffer (fn args loop)
-  "FN ARGS LOOP."
+(defun gitmanager-loop-create-buffer (fn args should-loop)
+  "FN ARGS SHOULD-LOOP."
   (let ((buffer (generate-new-buffer "* GitManager Async Eval *" )))
     (with-current-buffer buffer
-      (set (make-local-variable 'async-eval-fn) fn)
-      (set (make-local-variable 'async-eval-args) args)
-      (set (make-local-variable 'loop) loop)
-      (set (make-local-variable 'should-exit) t))
+      (setq gitmanager-async-eval-fn fn
+            gitmanager-async-eval-args args
+            gitmanager-should-loop should-loop
+            gitmanager-should-exit t))
     buffer))
 
 ;; BEGIN MAIN LOOP
@@ -136,17 +148,17 @@ returns results buffer (needs to be awaited)"
   (let ((buffer (process-buffer process)))
     (when (not (null buffer))
       (with-current-buffer buffer
-        (when async-eval-fn
-          (let ((result (apply async-eval-fn async-eval-args)))
-            (if loop
+        (when gitmanager-async-eval-fn
+          (let ((result (apply gitmanager-async-eval-fn gitmanager-async-eval-args)))
+            (if gitmanager-should-loop
               (if (equal result 'gitmanager-loop-retry)
-                  (setq should-exit nil)
-                (setq should-exit t
-                      async-eval-fn nil
-                      async-eval-args nil))
-                (setq async-eval-fn nil
-                      async-eval-args nil))))
-        (if should-exit
+                  (setq gitmanager-should-exit nil)
+                (setq gitmanager-should-exit t
+                      gitmanager-async-eval-fn nil
+                      gitmanager-async-eval-args nil))
+                (setq gitmanager-async-eval-fn nil
+                      gitmanager-async-eval-args nil))))
+        (if gitmanager-should-exit
             (kill-buffer buffer)
           (when (buffer-live-p buffer)
             (gitmanager-loop buffer)))))))
@@ -175,7 +187,7 @@ returns results buffer (needs to be awaited)"
 
 (defun gitmanager-async-wait-for-buffer-test (buffer fn args)
   "BUFFER FN ARGS."
-  (if (null (with-current-buffer buffer (set-difference paths completed)))
+  (if (null (with-current-buffer buffer (set-difference gitmanager-paths gitmanager-paths-completed)))
       (with-current-buffer buffer
         (apply fn args))
     ;; Tell async parent loop process to retry
