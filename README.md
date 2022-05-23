@@ -10,6 +10,33 @@ or
 
 * run the bash script `gitmanager` directly.
 
+
+### Emacs package install instructions
+- Doom Emacs
+Add the following to you packages.el
+``` emacs-lisp
+(package! gitmanager :recipe (:host github :repo "nan0scho1ar/gitmanager" :files ("*.el")))
+```
+
+``` emacs-lisp
+(use-package! gitmanager)
+(after! gitmanager
+
+  ;; Add one of the following repo sources
+
+  ;; repo source option one  (Use same cache files as CLI tool)
+  ;; (setq gitmanager-repo-source 'gitmanager-cache-file
+  ;;       gitmanager-cache-dir "/home/your-username-here/.config/gitmanager/")
+
+  ;; repo source option two  (Use projectile known projects)
+  ;; (setq gitmanager-repo-source 'projectile)
+
+  (map! :mode gitmanager-mode :n "RET" #'gitmanager-run-magit)
+  (map! :mode gitmanager-mode :n "q" #'gitmanager-hide)
+  (map! :mode gitmanager-mode :n "r" #'gitmanager-fetch-and-state)
+  (map! :leader :desc "Open Gitmanager" "g m" #'gitmanager))
+```
+
 ### Use
 Before you can use any of the other commands you must cache the location of your repos.
 This is accomplished with the `-F` (find) flag.
