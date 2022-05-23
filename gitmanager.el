@@ -351,8 +351,8 @@ Selecting one of the repos in the gitmanager buffer will open it in magit."
     (erase-buffer)
     (sit-for 0))
   (gitmanager-async-apply #'gitmanager-fetch-and-state)
-  (setq gitmanager-previous-buffer (current-buffer)))
-  (message "Fetching repos...")
+  (setq gitmanager-previous-buffer (current-buffer))
+  (message "Fetching repos..."))
 
 
 
