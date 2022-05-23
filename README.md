@@ -12,13 +12,13 @@ or
 
 
 ### Emacs package install instructions
-- Doom Emacs
+1. Doom Emacs
 Add the following to you packages.el
 ``` emacs-lisp
 (package! gitmanager :recipe (:host github :repo "nan0scho1ar/gitmanager" :files ("*.el")))
 ```
 
-Add the following to you config.el
+2. Add the following to you config.el
 ``` emacs-lisp
 (use-package! gitmanager)
 (after! gitmanager
@@ -38,7 +38,7 @@ Add the following to you config.el
   (map! :leader :desc "Open Gitmanager" "g m" #'gitmanager))
 ```
 
-### Use
+### CLI Usage
 Before you can use any of the other commands you must cache the location of your repos.
 This is accomplished with the `-F` (find) flag.
 E.G. to recursively search you `$HOME` directory for git repositories use `gitmanager -F ~`
