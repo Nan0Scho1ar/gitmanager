@@ -18,6 +18,7 @@ Add the following to you packages.el
 (package! gitmanager :recipe (:host github :repo "nan0scho1ar/gitmanager" :files ("*.el")))
 ```
 
+Add the following to you config.el
 ``` emacs-lisp
 (use-package! gitmanager)
 (after! gitmanager
