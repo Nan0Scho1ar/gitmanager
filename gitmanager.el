@@ -47,6 +47,12 @@ Requires 'gitmanager-cache-dir to be set to appropriate path.
 (defvar-local gitmanager-out-buffer nil)
 (defvar-local gitmanager-post-process nil)
 
+(defface gitmanager-faces-path
+  '((((class color) (min-colors 8))
+     :foreground "cornflower blue"))
+  "Branch Clean Face."
+  :group 'gitmanager-faces)
+
 (defface gitmanager-faces-state-clean
   '((((class color) (min-colors 8))
      :foreground "green3"))
@@ -279,7 +285,7 @@ gitmanager-async-wait-for-buffer-then-apply"
                                    'face 'gitmanager-faces-state-conflicts)
                        "   |  ")))))
     (concat state-str (propertize (format "%s\n" path)
-                                  'face 'italic))))
+                                  'face 'gitmanager-faces-path))))
 
 
 ;; Fetch
