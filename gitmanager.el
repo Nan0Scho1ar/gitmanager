@@ -20,9 +20,20 @@
 ;;
 ;;; Code:
 (require 'magit)
+(require 'projectile)
 
 (defvar gitmanager-mode-map)
 (defvar gitmanager-previous-buffer nil)
+(defvar gitmanager-repo-source 'gitmanager-cache-file
+  "Source for fetching the repository list.
+
+Values: 'gitmanager-cache-file 'projectile
+
+'gitmanager-cache-file: Use same cache file as the gitmanager cli.
+Requires 'gitmanager-cache-dir to be set to appropriate path.
+
+'projectile: Use the known project list from projectile.")
+
 (defvar gitmanager-cache-dir "/home/nan0scho1ar/.config/gitmanager/")
 
 (defvar-local gitmanager-async-eval-fn nil)
@@ -219,15 +230,19 @@ gitmanager-async-wait-for-buffer-then-apply"
 
 (defun gitmanager-get-repos ()
   "Fetch a list of paths for git repos."
-  (mapcar (lambda (x) (s-replace-regexp "\.git$" "" x))
-          (set-difference
-           (with-temp-buffer
-             (insert-file-contents (concat gitmanager-cache-dir "repos.cache"))
-             (split-string (buffer-string) "\n" t))
-           (with-temp-buffer
-             (insert-file-contents (concat gitmanager-cache-dir "repos.exclude"))
-             (split-string (buffer-string) "\n" t))
-           :test (lambda (a b) (equal a b)))))
+  (cond
+   ((equal gitmanager-repo-source 'projectile)
+    projectile-known-projects)
+   ((equal gitmanager-repo-source 'gitmanager-cache-file)
+    (mapcar (lambda (x) (s-replace-regexp "\.git$" "" x))
+            (set-difference
+             (with-temp-buffer
+               (insert-file-contents (concat gitmanager-cache-dir "repos.cache"))
+               (split-string (buffer-string) "\n" t))
+             (with-temp-buffer
+               (insert-file-contents (concat gitmanager-cache-dir "repos.exclude"))
+               (split-string (buffer-string) "\n" t))
+             :test (lambda (a b) (equal a b)))))))
 
 
 ;; State
